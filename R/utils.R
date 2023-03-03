@@ -12,13 +12,13 @@
 #' @return return value of rhs function. 
 NULL
 
-
+### used in ui.R
 onehot <- function(x) {
     res <- model.matrix(~0 + x)
     colnames(res) <- gsub('^x(.*)', '\\1', colnames(res))
     return(res)
 }
-
+### used in ui.R
 scaleData <- function(A, margin = 1, thresh = 10) {
     if (!"dgCMatrix" %in% class(A))
         A <- methods::as(A, "dgCMatrix")
@@ -32,7 +32,7 @@ scaleData <- function(A, margin = 1, thresh = 10) {
     return(res)
 }
 
-
+### Used in harmonize below
 moe_correct_ridge <- function(harmonyObj) {
     harmonyObj$moe_correct_ridge_cpp()
 }
@@ -47,11 +47,11 @@ moe_correct_ridge <- function(harmonyObj) {
 #' HarmonyMatrix function with return_object=TRUE.
 #' @return Returns nothing, modifies object in place. 
 #' @export
-moe_ridge_get_betas <- function(harmonyObj) {
+moe_ridge_get_betas <- function(harmonyObj) { ### for vignette, not really used in running
     harmonyObj$moe_ridge_get_betas_cpp()
 }
 
-
+### Used in harmonize function below
 cluster <- function(harmonyObj) {
     if (harmonyObj$ran_init == FALSE) {
         stop('before clustering, run init_cluster')
@@ -130,7 +130,7 @@ init_cluster <- function(harmonyObj, cluster_prior=NULL) {
 
 }
 
-
+### I guess this is used to plot harmony object function convergence plot
 HarmonyConvergencePlot <- function(
         harmonyObj, round_start=1, round_end=Inf, do_wrap=FALSE
     ) {  

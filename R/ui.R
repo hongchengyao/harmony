@@ -92,7 +92,6 @@ HarmonyMatrix <- function(
     verbose = TRUE, reference_values = NULL, cluster_prior = NULL
 ) {
     
-    
     ## TODO: check for 
     ##    partially observed batch variables (WARNING)
     ##    batch variables with only 1 level (WARNING)

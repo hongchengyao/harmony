@@ -17,6 +17,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   Z_orig = MATTYPE(__Z);
   Z_cos = MATTYPE(Z_orig);
   cosine_normalize(Z_cos, 0, true); // normalize columns
+  // cosine_normalize(Z_cos, 0, false); // I think this could lead to problems sometimes
   
   Phi = __Phi;
   Phi_moe = __Phi_moe;
@@ -137,6 +138,23 @@ bool harmony::check_convergence(int type) {
 
 
 
+// HCYAO: define a new function for calculating centroid, borrow code from moe_correct_ridge_cpp
+// [[Rcpp::export]]
+MATTYPE get_intercept(const MATTYPE& Z_orig, const int K, const MATTYPE& Phi_moe,
+                      const MATTYPE& R, const MATTYPE lambda, const int d){
+  // don't know how to initialize matrix with correct dimension,
+  // so just do what compute_Y does
+  MATTYPE Y_t = zeros<MATTYPE>(K, d);
+  // MATTYPE Y_t = arma::zeroes<MATTYPE>(, ); // suggested by Ilya
+  // MATTYPE Y_t = (Z_orig * R.t()).t(); // naive method to set dimension  K * d
+  for (int k = 0; k < K; k++) { 
+    MATTYPE Phi_Rk = Phi_moe * arma::diagmat(R.row(k));
+    MATTYPE W = arma::inv(Phi_Rk * Phi_moe.t() + lambda) * Phi_Rk * Z_orig.t();
+    Y_t.row(k) = W.row(0); // hcyao: make Y's k-th column be equal to the first row of W
+  }
+  Rcout << "HCYAO change centroid";
+  return arma::normalise(Y_t.t(), 2, 0); // return a d*K normalized matrix
+}
 
 
 int harmony::cluster_cpp() {
@@ -154,7 +172,8 @@ int harmony::cluster_cpp() {
       return(-1);
     
     // STEP 1: Update Y
-    Y = compute_Y(Z_cos, R);
+    // Y = compute_Y(Z_cos, R); //HCYAO: this is the original code to compute centroid
+    Y = get_intercept(Z_orig, K, Phi_moe, R, lambda, d); //HCYAO: this is my new function to calculate centroid
     dist_mat = 2 * (1 - Y.t() * Z_cos); // Y was changed
 
     // STEP 3: Update R

@@ -12,6 +12,22 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// get_intercept
+MATTYPE get_intercept(const MATTYPE& Z_orig, const int K, const MATTYPE& Phi_moe, const MATTYPE& R, const MATTYPE lambda, const int d);
+RcppExport SEXP _harmony_get_intercept(SEXP Z_origSEXP, SEXP KSEXP, SEXP Phi_moeSEXP, SEXP RSEXP, SEXP lambdaSEXP, SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const MATTYPE& >::type Z_orig(Z_origSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const MATTYPE& >::type Phi_moe(Phi_moeSEXP);
+    Rcpp::traits::input_parameter< const MATTYPE& >::type R(RSEXP);
+    Rcpp::traits::input_parameter< const MATTYPE >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const int >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_intercept(Z_orig, K, Phi_moe, R, lambda, d));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_Y
 MATTYPE compute_Y(const MATTYPE& Z_cos, const MATTYPE& R);
 RcppExport SEXP _harmony_compute_Y(SEXP Z_cosSEXP, SEXP RSEXP) {
@@ -44,6 +60,7 @@ END_RCPP
 RcppExport SEXP _rcpp_module_boot_harmony_module();
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_harmony_get_intercept", (DL_FUNC) &_harmony_get_intercept, 6},
     {"_harmony_compute_Y", (DL_FUNC) &_harmony_compute_Y, 2},
     {"_harmony_scaleRows_dgc", (DL_FUNC) &_harmony_scaleRows_dgc, 6},
     {"_rcpp_module_boot_harmony_module", (DL_FUNC) &_rcpp_module_boot_harmony_module, 0},
