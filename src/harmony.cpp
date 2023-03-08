@@ -16,8 +16,9 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   Z_corr = MATTYPE(__Z);
   Z_orig = MATTYPE(__Z);
   Z_cos = MATTYPE(Z_orig);
-  cosine_normalize(Z_cos, 0, true); // normalize columns
-  // cosine_normalize(Z_cos, 0, false); // I think this could lead to problems sometimes
+  Z_cos = arma::normalise(Z_cos, 2, 0);
+  
+  // cosine_normalize(Z_cos, 0, true); // normalize columns
   
   Phi = __Phi;
   Phi_moe = __Phi_moe;
@@ -58,7 +59,8 @@ void harmony::allocate_buffers() {
 
 void harmony::init_cluster_cpp(unsigned C) {
   // kmeans is called outside, in the R function
-  cosine_normalize(Y, 0, false); // normalize columns
+  Y = arma::normalise(Y, 2, 0);
+  // cosine_normalize(Y, 0, false); // normalize columns
   
   // (2) ASSIGN CLUSTER PROBABILITIES
   // using a nice property of cosine distance,
