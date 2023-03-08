@@ -154,7 +154,7 @@ MATTYPE get_intercept(const MATTYPE& Z_orig, const int K, const MATTYPE& Phi_moe
     MATTYPE W = arma::inv(Phi_Rk * Phi_moe.t() + lambda) * Phi_Rk * Z_orig.t();
     Y_t.row(k) = W.row(0); // hcyao: make Y's k-th column be equal to the first row of W
   }
-  Rcout << "HCYAO change centroid";
+  Rcout << "HCYAO change centroid mar8";
   return arma::normalise(Y_t.t(), 2, 0); // return a d*K normalized matrix
 }
 
