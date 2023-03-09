@@ -100,7 +100,7 @@ void harmony::compute_objective() {
   float _cross_entropy;
   // HCYAO change
   // _cross_entropy = as_scalar(accu((R.each_col() % sigma) % ((arma::repmat(theta.t(), K, 1) % log((O + 1) / (E + 1))) * Phi)));
-  _cross_entropy = as_scalar(accu((R.each_col() % sigma) % ((arma::repmat(theta.t(), K, 1) % log(1 + O / E)) * Phi)));
+  _cross_entropy = as_scalar(accu((R.each_col() % sigma) % ((arma::repmat(theta.t(), K, 1) % log((E + O) / E)) * Phi)));
   Rcout << "HCYAO change objective mar8";
   objective_kmeans.push_back(kmeans_error + _entropy + _cross_entropy);
   objective_kmeans_dist.push_back(kmeans_error);
