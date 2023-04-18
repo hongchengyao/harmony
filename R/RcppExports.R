@@ -5,6 +5,10 @@ compute_Y <- function(Z_cos, R) {
     .Call('_harmony_compute_Y', PACKAGE = 'harmony', Z_cos, R)
 }
 
+svd_get_betas_cpp <- function(Phi_moe, sqrtRk, lambda_vec, Z) {
+    .Call('_harmony_svd_get_betas_cpp', PACKAGE = 'harmony', Phi_moe, sqrtRk, lambda_vec, Z)
+}
+
 scaleRows_dgc <- function(x, p, i, ncol, nrow, thresh) {
     .Call('_harmony_scaleRows_dgc', PACKAGE = 'harmony', x, p, i, ncol, nrow, thresh)
 }

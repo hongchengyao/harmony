@@ -67,6 +67,26 @@ MATTYPE compute_Y(const MATTYPE& Z_cos, const MATTYPE& R) {
 
 
 // [[Rcpp::export]]
+arma::cube svd_get_betas_cpp(arma::mat& Phi_moe, arma::mat& sqrtRk, arma::vec& lambda_vec, arma::mat& Z) {
+    // WL: B x D x L
+    arma::cube WL = arma::zeros<arma::cube>(Phi_moe.n_rows, Z.n_rows, lambda_vec.n_rows); 
+    arma::mat U, V; 
+    arma::vec S; 
+    // arma::mat sqrtRk = arma::diagmat(arma::sqrt(Rk)); 
+    arma::svd_econ(U, S, V, (Phi_moe * sqrtRk).t()); 
+    // arma::svd(U, S, V, (Phi_moe.each_row() % arma::sqrt(Rk)).t()); 
+    
+    // X: N x B
+    // U: N x B
+    // S: B x B
+    // V: B x B
+    for (int i = 0; i < lambda_vec.n_rows; i++) {
+        WL.slice(i) = V * arma::diagmat(1 / (S % S + lambda_vec(i))) * arma::diagmat(S) * U.t() * sqrtRk * Z.t(); 
+    }
+    return WL;
+}
+
+// [[Rcpp::export]]
 MATTYPE scaleRows_dgc(const VECTYPE& x, const VECTYPE& p, const VECTYPE& i, 
                         int ncol, int nrow, float thresh) {
     // (0) fill in non-zero elements

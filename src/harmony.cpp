@@ -18,7 +18,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   Z_cos = MATTYPE(Z_orig);
   Z_cos = arma::normalise(Z_cos, 2, 0);
 
-  Rcout << "hcyao change Mar22" << endl;
+  Rcout << "hcyao change Apr18" << endl;
   // cosine_normalize(Z_cos, 0, true); // normalize columns
   
   Phi = __Phi;
@@ -223,6 +223,33 @@ int harmony::update_R() {
   return 0;
 }
 
+void harmony::moe_correct_full_ridge_cpp(){
+  // construct centered Z_orig for cluster k 
+  Z_corr = Z_orig;
+  arma::vec lambda_vec = vec(1, fill::zeros);
+  lambda_vec(0) = lambda(1, 1); // let's use just one lambda for now
+  arma::cube WL;
+  MATTYPE Z_orig_center_k;
+  arma::mat W;
+  for(int k = 0; k<K; k++){
+    Z_orig_center_k = Z_orig;
+    Z_orig_center_k.each_col() -= arma::sum(Z_orig * arma::diagmat(R.row(k)), 1) / arma::accu(R.row(k));
+    Phi_Rk = Phi_moe * arma::diagmat(R.row(k));
+    arma::mat sqrtRk = arma::diagmat(arma::sqrt(R.row(k))); 
+    WL = svd_get_betas_cpp(Phi_moe, sqrtRk, lambda_vec, Z_orig_center_k);
+    W = WL.slice(0);
+    // W = select_lambda_cpp(WL, lambda_vec); // Need a function to select optimal W from WL
+    W.row(0).zeros();
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+
+  // int k = 0;
+  // now we get the centered Z_orig_center_k
+  // Z_orig_center_k.each_col() -= arma::sum(Z_orig * arma::diagmat(R.row(k)), 1) / arma::accu(R.row(k));
+  // Z_orig * arma::diagmat(R.row(k))
+}
+
 
 void harmony::moe_correct_ridge_cpp() {
   Z_corr = Z_orig;
@@ -292,6 +319,7 @@ RCPP_MODULE(harmony_module) {
   .method("cluster_cpp", &harmony::cluster_cpp)
   .method("moe_correct_ridge_cpp", &harmony::moe_correct_ridge_cpp)
   .method("moe_ridge_get_betas_cpp", &harmony::moe_ridge_get_betas_cpp)
+  .method("moe_correct_full_ridge_cpp", &harmony::moe_correct_full_ridge_cpp)
   ;
 }
 

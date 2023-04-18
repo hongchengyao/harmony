@@ -38,6 +38,7 @@ public:
   void compute_objective(); 
   int update_R();
   bool check_convergence(int type);
+  void moe_correct_full_ridge_cpp();
 
   /* FIELDS */
   MATTYPE R, Z_orig, Z_corr, Z_cos, Y, Y_unnormed, Phi, Phi_moe; 

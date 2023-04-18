@@ -34,7 +34,8 @@ scaleData <- function(A, margin = 1, thresh = 10) {
 
 
 moe_correct_ridge <- function(harmonyObj) {
-    harmonyObj$moe_correct_ridge_cpp()
+    # harmonyObj$moe_correct_ridge_cpp()
+    harmonyObj$moe_correct_full_ridge_cpp()
 }
 
 
