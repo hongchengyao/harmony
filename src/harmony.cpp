@@ -223,6 +223,14 @@ int harmony::update_R() {
   return 0;
 }
 
+// HCYAO defined
+arma::vec harmony::dym_lambda_moe_correct_ridge_cpp(){
+  Z_corr = Z_orig;
+  for(int k = 0; k < K; k++){
+    arma::vec O_k = R.row(k) * Phi.t();
+  }
+  return O_k;
+}
 
 void harmony::moe_correct_ridge_cpp() {
   Z_corr = Z_orig;

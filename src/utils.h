@@ -65,7 +65,18 @@ MATTYPE compute_Y(const MATTYPE& Z_cos, const MATTYPE& R) {
     return arma::normalise(Z_cos * R.t(), 2, 0);
 }
 
-
+// HCYAO defined
+// [[Rcpp::export]]
+float find_mid_lambda_cpp(arma::vec cluster_size, float lambda_win){
+    float batch_max = cluster_size.max();
+    float batch_cutoff = batch_max * pow(10, -lambda_win);
+    arma::uvec keep_ind = find(cluster_size >= batch_cutoff);
+    arma::uvec filter_ind = find(cluster_size < batch_cutoff);
+    float min_keep = cluster_size.elem(keep_ind).min();
+    float max_filter = cluster_size.elem(filter_ind).max();
+    float lambda = sqrt(min_keep * max_filter);
+    return lambda;
+}
 // [[Rcpp::export]]
 MATTYPE scaleRows_dgc(const VECTYPE& x, const VECTYPE& p, const VECTYPE& i, 
                         int ncol, int nrow, float thresh) {
