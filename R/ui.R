@@ -49,6 +49,10 @@
 #' @param cluster_prior (Advanced Usage) Provides user defined clusters for 
 #' cluster initialization. If the number of provided clusters C is less than K, 
 #' Harmony will initialize K-C clusters with kmeans. C cannot exceed K.  
+#' @param lambda_win blabla
+#' bla
+#' @param lambda_quan aaaaaa
+#' aaaaa
 #' 
 #' @return By default, matrix with corrected PCA embeddings. If return_object 
 #' is TRUE, returns the full Harmony object (R6 reference class type). 
@@ -89,7 +93,8 @@ HarmonyMatrix <- function(
     max.iter.harmony = 10, max.iter.cluster = 200, 
     epsilon.cluster = 1e-5, epsilon.harmony = 1e-4, 
     plot_convergence = FALSE, return_object = FALSE, 
-    verbose = TRUE, reference_values = NULL, cluster_prior = NULL
+    verbose = TRUE, reference_values = NULL, cluster_prior = NULL,
+    lambda_win = 3, lambda_quan = 0.66
 ) {
     
     
@@ -195,7 +200,8 @@ HarmonyMatrix <- function(
     harmonyObj$setup(
         data_mat, phi, phi_moe, 
         Pr_b, sigma, theta, max.iter.cluster,epsilon.cluster,
-        epsilon.harmony, nclust, tau, block.size, lambda_mat, verbose
+        epsilon.harmony, nclust, tau, block.size, lambda_mat, verbose,
+        lambda_win, lambda_quan
     )
     init_cluster(harmonyObj, cluster_prior)
     harmonize(harmonyObj, max.iter.harmony, verbose)

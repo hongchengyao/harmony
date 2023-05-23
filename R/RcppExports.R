@@ -5,6 +5,10 @@ compute_Y <- function(Z_cos, R) {
     .Call('_harmony_compute_Y', PACKAGE = 'harmony', Z_cos, R)
 }
 
+find_mid_lambda_cpp <- function(cluster_size, lambda_win, quantile) {
+    .Call('_harmony_find_mid_lambda_cpp', PACKAGE = 'harmony', cluster_size, lambda_win, quantile)
+}
+
 scaleRows_dgc <- function(x, p, i, ncol, nrow, thresh) {
     .Call('_harmony_scaleRows_dgc', PACKAGE = 'harmony', x, p, i, ncol, nrow, thresh)
 }

@@ -67,14 +67,16 @@ MATTYPE compute_Y(const MATTYPE& Z_cos, const MATTYPE& R) {
 
 // HCYAO defined
 // [[Rcpp::export]]
-float find_mid_lambda_cpp(arma::vec cluster_size, float lambda_win){
+float find_mid_lambda_cpp(arma::vec cluster_size, float lambda_win,
+                          float quantile){
     float batch_max = cluster_size.max();
     float batch_cutoff = batch_max * pow(10, -lambda_win);
     arma::uvec keep_ind = find(cluster_size >= batch_cutoff);
     arma::uvec filter_ind = find(cluster_size < batch_cutoff);
     float min_keep = cluster_size.elem(keep_ind).min();
     float max_filter = cluster_size.elem(filter_ind).max();
-    float lambda = sqrt(min_keep * max_filter);
+    float lambda = pow(min_keep, quantile) * pow(max_filter, 1 - quantile);
+    // float lambda = sqrt(min_keep * max_filter);
     return lambda;
 }
 // [[Rcpp::export]]
