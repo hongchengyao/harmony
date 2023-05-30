@@ -94,7 +94,7 @@ HarmonyMatrix <- function(
     epsilon.cluster = 1e-5, epsilon.harmony = 1e-4, 
     plot_convergence = FALSE, return_object = FALSE, 
     verbose = TRUE, reference_values = NULL, cluster_prior = NULL,
-    lambda_win = 3, lambda_quan = 0.66
+    lambda_win = 3, lambda_quan = 0.5, lambda_mode = "dynamic"
 ) {
     
     
@@ -204,7 +204,7 @@ HarmonyMatrix <- function(
         lambda_win, lambda_quan
     )
     init_cluster(harmonyObj, cluster_prior)
-    harmonize(harmonyObj, max.iter.harmony, verbose)
+    harmonize(harmonyObj, max.iter.harmony, verbose, lambda_mode)
     if (plot_convergence) graphics::plot(HarmonyConvergencePlot(harmonyObj))
     
     ## Return either the R6 Harmony object or the corrected PCA matrix

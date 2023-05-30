@@ -33,9 +33,16 @@ scaleData <- function(A, margin = 1, thresh = 10) {
 }
 
 
-moe_correct_ridge <- function(harmonyObj) {
+moe_correct_ridge <- function(harmonyObj, lambda_mode) {
     # harmonyObj$moe_correct_ridge_cpp()
-    harmonyObj$dym_lambda_moe_correct_ridge_cpp()
+    if(lambda_mode == "dynamic"){
+        harmonyObj$dym_lambda_moe_correct_ridge_cpp()
+    }else if(lambda_mode == "middle"){
+        harmonyObj$mid_lambda_moe_correct_ridge_cpp()
+    }else if(lambda_mode == "min_keep"){
+        harmonyObj$min_above_moe_correct_ridge_cpp()
+    }else{stop('unknown lambda_mode')}
+    
 }
 
 
@@ -60,7 +67,7 @@ cluster <- function(harmonyObj) {
     harmonyObj$cluster_cpp()
 }
 
-harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
+harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, lambda_mode) {
     if (iter_harmony < 1) {
         return(0)
     }
@@ -80,7 +87,7 @@ harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
         }
         
         # STEP 2: regress out covariates
-        moe_correct_ridge(harmonyObj)
+        moe_correct_ridge(harmonyObj, lambda_mode)
         
         # STEP 3: check for convergence
         if (harmonyObj$check_convergence(1)) {

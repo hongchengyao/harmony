@@ -5,8 +5,16 @@ compute_Y <- function(Z_cos, R) {
     .Call('_harmony_compute_Y', PACKAGE = 'harmony', Z_cos, R)
 }
 
-find_mid_lambda_cpp <- function(cluster_size, lambda_win, quantile) {
-    .Call('_harmony_find_mid_lambda_cpp', PACKAGE = 'harmony', cluster_size, lambda_win, quantile)
+find_quan_lambda_cpp <- function(cluster_size, lambda_win, quantile) {
+    .Call('_harmony_find_quan_lambda_cpp', PACKAGE = 'harmony', cluster_size, lambda_win, quantile)
+}
+
+find_ilya_lambda_cpp <- function(cluster_size) {
+    .Call('_harmony_find_ilya_lambda_cpp', PACKAGE = 'harmony', cluster_size)
+}
+
+find_min_above_lambda_cpp <- function(cluster_size, lambda_win, quantile) {
+    .Call('_harmony_find_min_above_lambda_cpp', PACKAGE = 'harmony', cluster_size, lambda_win, quantile)
 }
 
 scaleRows_dgc <- function(x, p, i, ncol, nrow, thresh) {

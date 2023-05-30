@@ -24,16 +24,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// find_mid_lambda_cpp
-float find_mid_lambda_cpp(arma::vec cluster_size, float lambda_win, float quantile);
-RcppExport SEXP _harmony_find_mid_lambda_cpp(SEXP cluster_sizeSEXP, SEXP lambda_winSEXP, SEXP quantileSEXP) {
+// find_quan_lambda_cpp
+float find_quan_lambda_cpp(arma::vec cluster_size, float lambda_win, float quantile);
+RcppExport SEXP _harmony_find_quan_lambda_cpp(SEXP cluster_sizeSEXP, SEXP lambda_winSEXP, SEXP quantileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type cluster_size(cluster_sizeSEXP);
     Rcpp::traits::input_parameter< float >::type lambda_win(lambda_winSEXP);
     Rcpp::traits::input_parameter< float >::type quantile(quantileSEXP);
-    rcpp_result_gen = Rcpp::wrap(find_mid_lambda_cpp(cluster_size, lambda_win, quantile));
+    rcpp_result_gen = Rcpp::wrap(find_quan_lambda_cpp(cluster_size, lambda_win, quantile));
+    return rcpp_result_gen;
+END_RCPP
+}
+// find_ilya_lambda_cpp
+float find_ilya_lambda_cpp(arma::vec cluster_size);
+RcppExport SEXP _harmony_find_ilya_lambda_cpp(SEXP cluster_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type cluster_size(cluster_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_ilya_lambda_cpp(cluster_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// find_min_above_lambda_cpp
+float find_min_above_lambda_cpp(arma::vec cluster_size, float lambda_win, float quantile);
+RcppExport SEXP _harmony_find_min_above_lambda_cpp(SEXP cluster_sizeSEXP, SEXP lambda_winSEXP, SEXP quantileSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type cluster_size(cluster_sizeSEXP);
+    Rcpp::traits::input_parameter< float >::type lambda_win(lambda_winSEXP);
+    Rcpp::traits::input_parameter< float >::type quantile(quantileSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_min_above_lambda_cpp(cluster_size, lambda_win, quantile));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -58,7 +82,9 @@ RcppExport SEXP _rcpp_module_boot_harmony_module();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_harmony_compute_Y", (DL_FUNC) &_harmony_compute_Y, 2},
-    {"_harmony_find_mid_lambda_cpp", (DL_FUNC) &_harmony_find_mid_lambda_cpp, 3},
+    {"_harmony_find_quan_lambda_cpp", (DL_FUNC) &_harmony_find_quan_lambda_cpp, 3},
+    {"_harmony_find_ilya_lambda_cpp", (DL_FUNC) &_harmony_find_ilya_lambda_cpp, 1},
+    {"_harmony_find_min_above_lambda_cpp", (DL_FUNC) &_harmony_find_min_above_lambda_cpp, 3},
     {"_harmony_scaleRows_dgc", (DL_FUNC) &_harmony_scaleRows_dgc, 6},
     {"_rcpp_module_boot_harmony_module", (DL_FUNC) &_rcpp_module_boot_harmony_module, 0},
     {NULL, NULL, 0}
