@@ -19,7 +19,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   Z_cos = MATTYPE(Z_orig);
   Z_cos = arma::normalise(Z_cos, 2, 0);
 
-  Rcout << "hcyao change May18 v1" << endl;
+  Rcout << "hcyao change May30" << endl;
   // cosine_normalize(Z_cos, 0, true); // normalize columns
   
   Phi = __Phi;
@@ -230,12 +230,10 @@ int harmony::update_R() {
 
 // HCYAO defined
 void harmony::dym_lambda_moe_correct_ridge_cpp(){
-  // float lambda_win = 2; // Should be change to an argument
-  // float lambda_quan = 0.5; // Should be change to an argument
   Z_corr = Z_orig;
   for(int k = 0; k < K; k++){
     arma::rowvec O_k = R.row(k) * Phi.t();
-    float lambda_dym = find_mid_lambda_cpp(O_k.t(), lambda_win, lambda_quan);
+    float lambda_dym = find_quan_lambda_cpp(O_k.t(), lambda_win, lambda_quan);
     all_lambda_dym_vec(k) = lambda_dym;
     arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
     lambda_dym_vec(0) = 0;
@@ -247,6 +245,43 @@ void harmony::dym_lambda_moe_correct_ridge_cpp(){
   }
   Z_cos = arma::normalise(Z_corr, 2, 0);
 }
+
+void harmony::mid_lambda_moe_correct_ridge_cpp(){
+  Z_corr = Z_orig;
+  for(int k = 0; k < K; k++){
+    arma::rowvec O_k = R.row(k) * Phi.t();
+    float lambda_dym = find_ilya_lambda_cpp(O_k.t());
+    all_lambda_dym_vec(k) = lambda_dym;
+    arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
+    lambda_dym_vec(0) = 0;
+    lambda_dym_mat = arma::diagmat(lambda_dym_vec);
+    Phi_Rk = Phi_moe * arma::diagmat(R.row(k));
+    W = arma::inv(Phi_Rk * Phi_moe.t() + lambda_dym_mat) * Phi_Rk * Z_orig.t();
+    W.row(0).zeros(); // do not remove the intercept 
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+void harmony::min_above_moe_correct_ridge_cpp(){
+  Z_corr = Z_orig;
+  for(int k = 0; k < K; k++){
+    arma::rowvec O_k = R.row(k) * Phi.t();
+    float lambda_dym = find_min_above_lambda_cpp(O_k.t(), lambda_win, lambda_quan);
+    all_lambda_dym_vec(k) = lambda_dym;
+    arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
+    lambda_dym_vec(0) = 0;
+    lambda_dym_mat = arma::diagmat(lambda_dym_vec);
+    Phi_Rk = Phi_moe * arma::diagmat(R.row(k));
+    W = arma::inv(Phi_Rk * Phi_moe.t() + lambda_dym_mat) * Phi_Rk * Z_orig.t();
+    W.row(0).zeros(); // do not remove the intercept 
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+
+
 
 void harmony::moe_correct_ridge_cpp() {
   Z_corr = Z_orig;
@@ -321,6 +356,8 @@ RCPP_MODULE(harmony_module) {
   .method("cluster_cpp", &harmony::cluster_cpp)
   .method("moe_correct_ridge_cpp", &harmony::moe_correct_ridge_cpp)
   .method("dym_lambda_moe_correct_ridge_cpp", &harmony::dym_lambda_moe_correct_ridge_cpp)
+  .method("mid_lambda_moe_correct_ridge_cpp", &harmony::mid_lambda_moe_correct_ridge_cpp)
+  .method("min_above_moe_correct_ridge_cpp", &harmony::min_above_moe_correct_ridge_cpp)
   .method("moe_ridge_get_betas_cpp", &harmony::moe_ridge_get_betas_cpp)
   ;
 }
