@@ -41,6 +41,10 @@ moe_correct_ridge <- function(harmonyObj, lambda_mode) {
         harmonyObj$mid_lambda_moe_correct_ridge_cpp()
     }else if(lambda_mode == "min_keep"){
         harmonyObj$min_above_moe_correct_ridge_cpp()
+    }else if(lambda_mode == "cap_middle"){
+        harmonyObj$cap_mid_lambda_moe_correct_ridge_cpp()
+    }else if(lambda_mode == "original"){
+        harmonyObj$moe_correct_ridge_cpp()
     }else{stop('unknown lambda_mode')}
     
 }

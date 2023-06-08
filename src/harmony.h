@@ -27,12 +27,13 @@ public:
              float __epsilon_kmeans, float __epsilon_harmony, 
              int __K, float tau, float __block_size, 
              MATTYPE __lambda, bool __verbose, float __lambda_win,
-             float __lambda_quan);
+             float __lambda_quan, float __cap);
   
   /* METHODS */
   void moe_correct_ridge_cpp();
   void dym_lambda_moe_correct_ridge_cpp();
   void mid_lambda_moe_correct_ridge_cpp();
+  void cap_mid_lambda_moe_correct_ridge_cpp();
   void min_above_moe_correct_ridge_cpp();
   CUBETYPE moe_ridge_get_betas_cpp();
   void init_cluster_cpp(unsigned C);
@@ -52,7 +53,7 @@ public:
   vector<int> kmeans_rounds; // OLD: Kb
   
   //    vector<uvec> phi_map;
-  float block_size, epsilon_kmeans, epsilon_harmony, merge_thresh_global, lambda_win, lambda_quan;
+  float block_size, epsilon_kmeans, epsilon_harmony, merge_thresh_global, lambda_win, lambda_quan, cap;
   int N, K, B, d, max_iter_kmeans, window_size; 
 
   // buffers
