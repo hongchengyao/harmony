@@ -19,7 +19,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   Z_cos = MATTYPE(Z_orig);
   Z_cos = arma::normalise(Z_cos, 2, 0);
 
-  Rcout << "hcyao change May30" << endl;
+  Rcout << "hcyao change June8" << endl;
   // cosine_normalize(Z_cos, 0, true); // normalize columns
   
   Phi = __Phi;
