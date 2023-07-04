@@ -11,14 +11,14 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
                     VECTYPE __sigma, VECTYPE __theta, int __max_iter_kmeans, 
                     float __epsilon_kmeans, float __epsilon_harmony, 
                     int __K, float tau, float __block_size, 
-                    MATTYPE __lambda, bool __verbose) {
+                    MATTYPE __lambda, bool __verbose, arma::vec __lambda_range) {
   
   Z_corr = MATTYPE(__Z);
   Z_orig = MATTYPE(__Z);
   Z_cos = MATTYPE(Z_orig);
   Z_cos = arma::normalise(Z_cos, 2, 0);
 
-  Rcout << "hcyao change Mar22" << endl;
+  Rcout << "hcyao change jul4" << endl;
   // cosine_normalize(Z_cos, 0, true); // normalize columns
   
   Phi = __Phi;
@@ -33,6 +33,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   
   
   lambda = __lambda;
+  lambda_range = __lambda_range;
   sigma = __sigma;
   sigma_prior = __sigma;
   block_size = __block_size;
@@ -224,6 +225,24 @@ int harmony::update_R() {
 }
 
 
+void harmony::mid_cap_moe_correct_ridge_cpp(){
+  Z_corr = Z_orig;
+  for(int k = 0; k < K; k++){
+    arma::rowvec O_k = R.row(k) * Phi.t();
+    float lambda_dym = find_lambda_cpp(O_k.t(), lambda_range);
+    all_lambda_dym_vec(k) = lambda_dym;
+    arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
+    lambda_dym_vec(0) = 0;
+    lambda_dym_mat = arma::diagmat(lambda_dym_vec);
+    Phi_Rk = Phi_moe * arma::diagmat(R.row(k));
+    W = arma::inv(Phi_Rk * Phi_moe.t() + lambda_dym_mat) * Phi_Rk * Z_orig.t();
+    W.row(0).zeros(); // do not remove the intercept 
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+
 void harmony::moe_correct_ridge_cpp() {
   Z_corr = Z_orig;
   for (int k = 0; k < K; k++) { 
@@ -275,6 +294,7 @@ RCPP_MODULE(harmony_module) {
   .field("sigma", &harmony::sigma)
   .field("theta", &harmony::theta)
   .field("lambda", &harmony::lambda)
+  .field("lambda_range", &harmony::lambda_range)
   .field("O", &harmony::O) 
   .field("E", &harmony::E)    
   .field("update_order", &harmony::update_order)    

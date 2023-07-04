@@ -26,7 +26,7 @@ public:
              VECTYPE __sigma, VECTYPE __theta, int __max_iter_kmeans, 
              float __epsilon_kmeans, float __epsilon_harmony, 
              int __K, float tau, float __block_size, 
-             MATTYPE __lambda, bool __verbose);
+             MATTYPE __lambda, bool __verbose, arma::vec __lambda_range);
   
   /* METHODS */
   void moe_correct_ridge_cpp();
@@ -41,7 +41,7 @@ public:
 
   /* FIELDS */
   MATTYPE R, Z_orig, Z_corr, Z_cos, Y, Y_unnormed, Phi, Phi_moe; 
-  VECTYPE Pr_b, theta, N_b, sigma, sigma_prior;
+  VECTYPE Pr_b, theta, N_b, sigma, sigma_prior, lambda_range;
   MATTYPE lambda; // diagonal MATTYPErix of ridge regression penalties
   vector<float> objective_harmony;
   vector<float> objective_kmeans, objective_kmeans_dist, objective_kmeans_entropy, objective_kmeans_cross;

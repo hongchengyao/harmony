@@ -89,7 +89,8 @@ HarmonyMatrix <- function(
     max.iter.harmony = 10, max.iter.cluster = 200, 
     epsilon.cluster = 1e-5, epsilon.harmony = 1e-4, 
     plot_convergence = FALSE, return_object = FALSE, 
-    verbose = TRUE, reference_values = NULL, cluster_prior = NULL
+    verbose = TRUE, reference_values = NULL, cluster_prior = NULL,
+    lambda_range = c(1, 10)
 ) {
     
     
@@ -195,7 +196,8 @@ HarmonyMatrix <- function(
     harmonyObj$setup(
         data_mat, phi, phi_moe, 
         Pr_b, sigma, theta, max.iter.cluster,epsilon.cluster,
-        epsilon.harmony, nclust, tau, block.size, lambda_mat, verbose
+        epsilon.harmony, nclust, tau, block.size, lambda_mat, verbose,
+        lambda_range
     )
     init_cluster(harmonyObj, cluster_prior)
     harmonize(harmonyObj, max.iter.harmony, verbose)

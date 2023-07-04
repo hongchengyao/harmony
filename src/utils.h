@@ -65,6 +65,15 @@ MATTYPE compute_Y(const MATTYPE& Z_cos, const MATTYPE& R) {
     return arma::normalise(Z_cos * R.t(), 2, 0);
 }
 
+// [[Rcpp::export]]
+float find_lambda_cpp(arma::vec cluster_size, arma::vec range){
+    float batch_max = cluster_size.max();
+    float batch_min = cluster_size.min();
+    float lambda = pow(batch_max, 0.5) * pow(batch_min, 0.5);
+    lambda = std::min(range(1), lambda);
+    lambda = std::max(range(0), lambda);
+    return lambda;
+}
 
 // [[Rcpp::export]]
 MATTYPE scaleRows_dgc(const VECTYPE& x, const VECTYPE& p, const VECTYPE& i, 
