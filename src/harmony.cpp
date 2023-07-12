@@ -11,7 +11,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
                     VECTYPE __sigma, VECTYPE __theta, int __max_iter_kmeans, 
                     float __epsilon_kmeans, float __epsilon_harmony, 
                     int __K, float tau, float __block_size, 
-                    MATTYPE __lambda, bool __verbose, arma::vec __lambda_range) {
+                    MATTYPE __lambda, bool __verbose, arma::fvec __lambda_range) {
   
   Z_corr = MATTYPE(__Z);
   Z_orig = MATTYPE(__Z);
@@ -54,6 +54,8 @@ void harmony::allocate_buffers() {
   E = zeros<MATTYPE>(K, B);  
   W = zeros<MATTYPE>(B + 1, d); 
   Phi_Rk = zeros<MATTYPE>(B + 1, N);
+  lambda_dym_mat = zeros<MATTYPE>(B + 1, B + 1);
+  all_lambda_dym_vec = zeros<VECTYPE>(K);
 }
 
 
@@ -229,7 +231,9 @@ void harmony::mid_cap_moe_correct_ridge_cpp(){
   Z_corr = Z_orig;
   for(int k = 0; k < K; k++){
     arma::rowvec O_k = R.row(k) * Phi.t();
-    float lambda_dym = find_lambda_cpp(O_k.t(), lambda_range);
+    float lambda_dym = find_lambda_cpp(O_k.t());
+    lambda_dym = std::min(lambda_range(1), lambda_dym);
+    lambda_dym = std::max(lambda_range(0), lambda_dym);
     all_lambda_dym_vec(k) = lambda_dym;
     arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
     lambda_dym_vec(0) = 0;
@@ -297,6 +301,9 @@ RCPP_MODULE(harmony_module) {
   .field("lambda_range", &harmony::lambda_range)
   .field("O", &harmony::O) 
   .field("E", &harmony::E)    
+  .field("lambda_dym_mat", &harmony::lambda_dym_mat)    
+  .field("all_lambda_dym_vec", &harmony::all_lambda_dym_vec)    
+  
   .field("update_order", &harmony::update_order)    
   .field("cells_update", &harmony::cells_update)    
   .field("kmeans_rounds", &harmony::kmeans_rounds)    
@@ -311,6 +318,7 @@ RCPP_MODULE(harmony_module) {
   .method("init_cluster_cpp", &harmony::init_cluster_cpp)
   .method("cluster_cpp", &harmony::cluster_cpp)
   .method("moe_correct_ridge_cpp", &harmony::moe_correct_ridge_cpp)
+  .method("mid_cap_moe_correct_ridge_cpp", &harmony::mid_cap_moe_correct_ridge_cpp)
   .method("moe_ridge_get_betas_cpp", &harmony::moe_ridge_get_betas_cpp)
   ;
 }

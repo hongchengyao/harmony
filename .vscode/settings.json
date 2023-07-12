@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.Rmd": "rmd",
-        "random": "cpp"
+        "random": "cpp",
+        "limits": "cpp"
     }
 }

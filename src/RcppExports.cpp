@@ -24,6 +24,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// find_lambda_cpp
+float find_lambda_cpp(arma::vec cluster_size);
+RcppExport SEXP _harmony_find_lambda_cpp(SEXP cluster_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type cluster_size(cluster_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_lambda_cpp(cluster_size));
+    return rcpp_result_gen;
+END_RCPP
+}
 // scaleRows_dgc
 MATTYPE scaleRows_dgc(const VECTYPE& x, const VECTYPE& p, const VECTYPE& i, int ncol, int nrow, float thresh);
 RcppExport SEXP _harmony_scaleRows_dgc(SEXP xSEXP, SEXP pSEXP, SEXP iSEXP, SEXP ncolSEXP, SEXP nrowSEXP, SEXP threshSEXP) {
@@ -45,6 +56,7 @@ RcppExport SEXP _rcpp_module_boot_harmony_module();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_harmony_compute_Y", (DL_FUNC) &_harmony_compute_Y, 2},
+    {"_harmony_find_lambda_cpp", (DL_FUNC) &_harmony_find_lambda_cpp, 1},
     {"_harmony_scaleRows_dgc", (DL_FUNC) &_harmony_scaleRows_dgc, 6},
     {"_rcpp_module_boot_harmony_module", (DL_FUNC) &_rcpp_module_boot_harmony_module, 0},
     {NULL, NULL, 0}
