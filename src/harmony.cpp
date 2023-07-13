@@ -11,7 +11,8 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
                     VECTYPE __sigma, VECTYPE __theta, int __max_iter_kmeans, 
                     float __epsilon_kmeans, float __epsilon_harmony, 
                     int __K, float tau, float __block_size, 
-                    MATTYPE __lambda, bool __verbose, arma::fvec __lambda_range) {
+                    MATTYPE __lambda, bool __verbose, arma::vec __lambda_range,
+                    std::vector<int> __B_vec) {
   
   Z_corr = MATTYPE(__Z);
   Z_orig = MATTYPE(__Z);
@@ -34,6 +35,7 @@ void harmony::setup(MATTYPE& __Z, MATTYPE& __Phi, MATTYPE& __Phi_moe, VECTYPE __
   
   lambda = __lambda;
   lambda_range = __lambda_range;
+  B_vec = __B_vec;
   sigma = __sigma;
   sigma_prior = __sigma;
   block_size = __block_size;
@@ -55,7 +57,7 @@ void harmony::allocate_buffers() {
   W = zeros<MATTYPE>(B + 1, d); 
   Phi_Rk = zeros<MATTYPE>(B + 1, N);
   lambda_dym_mat = zeros<MATTYPE>(B + 1, B + 1);
-  all_lambda_dym_vec = zeros<VECTYPE>(K);
+  all_lambda_dym_mat = zeros<MATTYPE>(K, B+1);
 }
 
 
@@ -231,12 +233,13 @@ void harmony::mid_cap_moe_correct_ridge_cpp(){
   Z_corr = Z_orig;
   for(int k = 0; k < K; k++){
     arma::rowvec O_k = R.row(k) * Phi.t();
-    float lambda_dym = find_lambda_cpp(O_k.t());
-    lambda_dym = std::min(lambda_range(1), lambda_dym);
-    lambda_dym = std::max(lambda_range(0), lambda_dym);
-    all_lambda_dym_vec(k) = lambda_dym;
-    arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
-    lambda_dym_vec(0) = 0;
+    arma::vec lambda_dym_vec = find_lambda_cpp(O_k.t(), lambda_range, B_vec);
+    // float lambda_dym = find_lambda_cpp(O_k.t());
+    // lambda_dym = std::min(lambda_range(1), lambda_dym);
+    // lambda_dym = std::max(lambda_range(0), lambda_dym);
+    all_lambda_dym_mat.row(k) = lambda_dym_vec.t();
+    // arma::vec lambda_dym_vec(lambda.n_rows, arma::fill::value(lambda_dym));
+    // lambda_dym_vec(0) = 0;
     lambda_dym_mat = arma::diagmat(lambda_dym_vec);
     Phi_Rk = Phi_moe * arma::diagmat(R.row(k));
     W = arma::inv(Phi_Rk * Phi_moe.t() + lambda_dym_mat) * Phi_Rk * Z_orig.t();
@@ -299,10 +302,11 @@ RCPP_MODULE(harmony_module) {
   .field("theta", &harmony::theta)
   .field("lambda", &harmony::lambda)
   .field("lambda_range", &harmony::lambda_range)
+  .field("B_vec", &harmony::B_vec)
   .field("O", &harmony::O) 
   .field("E", &harmony::E)    
   .field("lambda_dym_mat", &harmony::lambda_dym_mat)    
-  .field("all_lambda_dym_vec", &harmony::all_lambda_dym_vec)    
+  .field("all_lambda_dym_mat", &harmony::all_lambda_dym_mat)    
   
   .field("update_order", &harmony::update_order)    
   .field("cells_update", &harmony::cells_update)    

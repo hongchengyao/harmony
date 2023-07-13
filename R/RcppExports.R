@@ -5,8 +5,12 @@ compute_Y <- function(Z_cos, R) {
     .Call('_harmony_compute_Y', PACKAGE = 'harmony', Z_cos, R)
 }
 
-find_lambda_cpp <- function(cluster_size) {
-    .Call('_harmony_find_lambda_cpp', PACKAGE = 'harmony', cluster_size)
+find_one_lambda_cpp <- function(cluster_size, range) {
+    .Call('_harmony_find_one_lambda_cpp', PACKAGE = 'harmony', cluster_size, range)
+}
+
+find_lambda_cpp <- function(cluster_size, range, B_vec) {
+    .Call('_harmony_find_lambda_cpp', PACKAGE = 'harmony', cluster_size, range, B_vec)
 }
 
 scaleRows_dgc <- function(x, p, i, ncol, nrow, thresh) {

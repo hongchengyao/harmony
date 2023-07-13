@@ -158,7 +158,12 @@ HarmonyMatrix <- function(
     if (length(sigma) == 1 & nclust > 1) {
         sigma <- rep(sigma, nclust)
     }
-    
+    if (lambda_range[2] < lambda_range[1]){
+        stop('lambda_range[2] cannot be smaller than lambda_range[1]')
+    }
+    if (lambda_range[1] <= 0){
+        stop('lambda_range cannot be smaller or equal to 0')
+    }
     ## Pre-compute some useful statistics
     phi <- Reduce(rbind, lapply(vars_use, function(var_use) {
         t(onehot(meta_data[[var_use]]))
@@ -197,7 +202,7 @@ HarmonyMatrix <- function(
         data_mat, phi, phi_moe, 
         Pr_b, sigma, theta, max.iter.cluster,epsilon.cluster,
         epsilon.harmony, nclust, tau, block.size, lambda_mat, verbose,
-        lambda_range
+        lambda_range, B_vec
     )
     init_cluster(harmonyObj, cluster_prior)
     harmonize(harmonyObj, max.iter.harmony, verbose)
