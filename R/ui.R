@@ -158,6 +158,9 @@ HarmonyMatrix <- function(
     if (length(sigma) == 1 & nclust > 1) {
         sigma <- rep(sigma, nclust)
     }
+    if(length(lambda_range) != 2){
+        stop('lambda_range should have length == 2')
+    }
     if (lambda_range[2] < lambda_range[1]){
         stop('lambda_range[2] cannot be smaller than lambda_range[1]')
     }
