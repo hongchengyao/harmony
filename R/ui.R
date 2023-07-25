@@ -84,13 +84,12 @@
 #' 
 HarmonyMatrix <- function(
     data_mat, meta_data, vars_use, do_pca = TRUE,
-    npcs = 20, theta = NULL, lambda = NULL, sigma = 0.1, 
+    npcs = 20, theta = NULL, lambda = c(1, 10), sigma = 0.1, 
     nclust = NULL, tau = 0, block.size = 0.05, 
     max.iter.harmony = 10, max.iter.cluster = 200, 
     epsilon.cluster = 1e-5, epsilon.harmony = 1e-4, 
     plot_convergence = FALSE, return_object = FALSE, 
-    verbose = TRUE, reference_values = NULL, cluster_prior = NULL,
-    lambda_range = c(1, 10)
+    verbose = TRUE, reference_values = NULL, cluster_prior = NULL
 ) {
     
     
@@ -150,23 +149,25 @@ HarmonyMatrix <- function(
     } else if (length(theta) != length(vars_use)) {
         stop('Please specify theta for each variable')
     }
-    if (is.null(lambda)) {
-        lambda <- rep(1, length(vars_use))
-    } else if (length(lambda) != length(vars_use)) {
-        stop('Please specify lambda for each variable')
-    }    
+
     if (length(sigma) == 1 & nclust > 1) {
         sigma <- rep(sigma, nclust)
     }
-    if(length(lambda_range) != 2){
-        stop('lambda_range should have length == 2')
+    
+    if(length(lambda) != 2){
+        stop('lambda should have length == 2')
     }
-    if (lambda_range[2] < lambda_range[1]){
-        stop('lambda_range[2] cannot be smaller than lambda_range[1]')
+    if (lambda[2] < lambda[1]){
+        stop('lambda[2] cannot be smaller than lambda[1]')
     }
-    if (lambda_range[1] <= 0){
-        stop('lambda_range cannot be smaller or equal to 0')
+    if (lambda[1] <= 0){
+        stop('lambda cannot be smaller or equal to 0')
     }
+    mode = "new"
+    if (lambda[2] == lambda[1]){
+        mode <- "old"
+    }
+
     ## Pre-compute some useful statistics
     phi <- Reduce(rbind, lapply(vars_use, function(var_use) {
         t(onehot(meta_data[[var_use]]))
@@ -179,10 +180,13 @@ HarmonyMatrix <- function(
     theta <- Reduce(c, lapply(seq_len(length(B_vec)), function(b) 
         rep(theta[b], B_vec[b])))
     theta <- theta * (1 - exp(-(N_b / (nclust * tau)) ^ 2))
-    
-    lambda <- Reduce(c, lapply(seq_len(length(B_vec)), function(b) 
-        rep(lambda[b], B_vec[b])))
-    lambda_mat <- diag(c(0, lambda))
+    # TODO No matter we have mode "old" or "new", lambda_mat is alway calculated
+    # This is mainly for backward compatability
+    # May need to change for later version
+    lambda_mat <- rep(lambda[1], sum(B_vec))
+    # lambda <- Reduce(c, lapply(seq_len(length(B_vec)), function(b) 
+    #     rep(lambda[b], B_vec[b])))
+    lambda_mat <- diag(c(0, lambda_mat))
     
     ## TODO: check that each ref val matches exactly one covariate
     ## TODO: check that you haven't marked all cells as reference! 
@@ -205,10 +209,10 @@ HarmonyMatrix <- function(
         data_mat, phi, phi_moe, 
         Pr_b, sigma, theta, max.iter.cluster,epsilon.cluster,
         epsilon.harmony, nclust, tau, block.size, lambda_mat, verbose,
-        lambda_range, B_vec
+        lambda, B_vec
     )
     init_cluster(harmonyObj, cluster_prior)
-    harmonize(harmonyObj, max.iter.harmony, verbose)
+    harmonize(harmonyObj, max.iter.harmony, verbose, mode)
     if (plot_convergence) graphics::plot(HarmonyConvergencePlot(harmonyObj))
     
     ## Return either the R6 Harmony object or the corrected PCA matrix

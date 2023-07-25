@@ -33,9 +33,12 @@ scaleData <- function(A, margin = 1, thresh = 10) {
 }
 
 
-moe_correct_ridge <- function(harmonyObj) {
-    # harmonyObj$moe_correct_ridge_cpp()
-    harmonyObj$mid_cap_moe_correct_ridge_cpp()
+moe_correct_ridge <- function(harmonyObj, mode) {
+    if (mode == "old"){
+        harmonyObj$moe_correct_ridge_cpp()
+    }else{
+        harmonyObj$mid_cap_moe_correct_ridge_cpp()
+    }
 }
 
 
@@ -60,7 +63,7 @@ cluster <- function(harmonyObj) {
     harmonyObj$cluster_cpp()
 }
 
-harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
+harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, mode) {
     if (iter_harmony < 1) {
         return(0)
     }
@@ -80,7 +83,7 @@ harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
         }
         
         # STEP 2: regress out covariates
-        moe_correct_ridge(harmonyObj)
+        moe_correct_ridge(harmonyObj, mode)
         
         # STEP 3: check for convergence
         if (harmonyObj$check_convergence(1)) {

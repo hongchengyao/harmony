@@ -26,7 +26,7 @@ public:
              VECTYPE __sigma, VECTYPE __theta, int __max_iter_kmeans, 
              float __epsilon_kmeans, float __epsilon_harmony, 
              int __K, float tau, float __block_size, 
-             MATTYPE __lambda, bool __verbose, arma::vec __lambda_range,
+             MATTYPE __lambda_mat, bool __verbose, arma::vec __lambda_range,
              std::vector<int> __B_vec);
   
   /* METHODS */
@@ -45,7 +45,7 @@ public:
   MATTYPE R, Z_orig, Z_corr, Z_cos, Y, Y_unnormed, Phi, Phi_moe, all_lambda_dym_mat; 
   VECTYPE Pr_b, theta, N_b, sigma, sigma_prior, lambda_range;
   // arma::vec lambda_range;
-  MATTYPE lambda; // diagonal MATTYPErix of ridge regression penalties
+  MATTYPE lambda_mat; // diagonal MATTYPErix of ridge regression penalties
   vector<float> objective_harmony;
   vector<float> objective_kmeans, objective_kmeans_dist, objective_kmeans_entropy, objective_kmeans_cross;
   vector<int> kmeans_rounds, B_vec; // OLD: Kb

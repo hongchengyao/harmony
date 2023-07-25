@@ -64,8 +64,7 @@ RunHarmony.Seurat <- function(
   reduction = 'pca',
   dims.use = NULL,
   theta = NULL,
-  lambda = NULL,
-  lambda_range = c(1, 10),
+  lambda = c(1, 10),
   sigma = 0.1,
   nclust = NULL,
   tau = 0,
@@ -107,8 +106,7 @@ RunHarmony.Seurat <- function(
   }
   embedding <- Seurat::Embeddings(object, reduction = reduction)
   if (is.null(dims.use)) {
-    # dims.use <- seq_len(ncol(embedding))
-    dims.use <- ncol(embedding)
+    dims.use <- seq_len(ncol(embedding))
   }
   dims_avail <- seq_len(ncol(embedding))
   if (!all(dims.use %in% dims_avail)) {
@@ -125,7 +123,7 @@ RunHarmony.Seurat <- function(
   )
 
   harmonyEmbed <- HarmonyMatrix(
-    embedding[, 1:dims.use],
+    embedding[, dims.use],
     metavars_df,
     group.by.vars,
     FALSE,
@@ -143,8 +141,7 @@ RunHarmony.Seurat <- function(
     plot_convergence,
     FALSE,
     verbose,
-    reference_values,
-    lambda_range = lambda_range
+    reference_values
   )
 
   reduction.key <- Seurat::Key(reduction.save, quiet = TRUE)
@@ -179,8 +176,7 @@ RunHarmony.SingleCellExperiment <- function(
     group.by.vars,
     dims.use = NULL,
     theta = NULL,
-    lambda = NULL,
-    lambda_range = c(1, 10),
+    lambda = c(1, 10),
     sigma = 0.1,
     nclust = NULL,
     tau = 0,
@@ -220,7 +216,7 @@ RunHarmony.SingleCellExperiment <- function(
     }
 
     harmonyEmbed <- HarmonyMatrix(
-        pca_embedding,
+        pca_embedding[, dims.use],
         metavars_df,
         group.by.vars,
         FALSE,
@@ -238,8 +234,7 @@ RunHarmony.SingleCellExperiment <- function(
         plot_convergence,
         FALSE,
         verbose,
-        reference_values,
-        lambda_range = lambda_range
+        reference_values
     )
 
     rownames(harmonyEmbed) <- row.names(metavars_df)
