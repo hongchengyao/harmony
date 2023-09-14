@@ -74,7 +74,7 @@ HarmonyMatrix <- function(
     return_object = FALSE, verbose = TRUE, reference_values = NULL,
     .options = harmony_options(), ...
     ) {
-
+    message('develop version for testing lambda')
     # Parameter checking -------------------------------------------------------
     if (hasArg(do_pca) || hasArg(npcs)) legacy_args("do_pca_npcs")
     if (hasArg(lambda)) legacy_args("lambda")

@@ -86,6 +86,7 @@ void harmony::allocate_buffers() {
     lambda_estimation = false;
   }
   W = zeros<MATTYPE>(B + 1, d);
+  all_lambda_mat = zeros<MATTYPE>(K, B+1);
 }
 
 
@@ -282,6 +283,7 @@ void harmony::moe_correct_ridge_cpp() {
       if (lambda_estimation){
         lambda_mat.diag() = find_lambda_cpp(O.row(k).t(), lambda_range, B_vec);
       }
+      all_lambda_mat.row(k) = lambda_mat.diag().t();
       _Rk.diag() = R.row(k);
       arma::sp_mat Phi_Rk = Phi_moe * _Rk;
       W = arma::inv(arma::mat(Phi_Rk * Phi_moe_t + lambda_mat)) * Phi_Rk * Z_orig.t();
@@ -342,5 +344,6 @@ RCPP_MODULE(harmony_module) {
       .field("B_vec", &harmony::B_vec)
       .field("lambda_mat", &harmony::lambda_mat)
       .field("lambda_range", &harmony::lambda_range)
+      .field("all_lambda_mat", &harmony::all_lambda_mat)
       ;
 }

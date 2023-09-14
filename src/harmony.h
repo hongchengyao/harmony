@@ -42,7 +42,7 @@ public:
   void setY(const MATTYPE& Z);
 
   /* FIELDS */
-  MATTYPE R, Z_orig, Z_corr, Z_cos, Y;
+  MATTYPE R, Z_orig, Z_corr, Z_cos, Y, all_lambda_mat;
   arma::sp_mat Phi, Phi_moe, Phi_moe_t, Phi_t, lambda_mat, Rk;
   VECTYPE Pr_b, theta, N_b, sigma, lambda_range;
   
