@@ -63,11 +63,7 @@ validate_lambda_range <- function(lambda_range) {
     }
     if (lambda_range[1] <= 0) {
         stop('Error: lambda_range cannot be smaller or equal to 0')
-    }
-    
-    if (lambda_range[2] == lambda_range[1]) {
-        message("Automatic lambda estimation for ridge is disabled. Harmony will have a fixed lambda for all batches")
-    }
+    }    
     return(lambda_range)
 }
 

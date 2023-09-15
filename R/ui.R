@@ -79,10 +79,12 @@ RunHarmony.default <- function(
   meta_data,
   vars_use,
   theta = NULL,
+  lambda = NULL, 
   sigma = 0.1,
   nclust = NULL,
   max_iter = 10,
   early_stop = TRUE,
+  lambda_auto = FALSE,
   ncores = 1,
   plot_convergence = FALSE,
   return_object = FALSE,
@@ -90,7 +92,7 @@ RunHarmony.default <- function(
   .options = harmony_options(),
   ...
   ) {
-    
+    message('hcyao harmony v1')
     ## Sanity check for number of cores
     max.cores <- RhpcBLASctl::omp_get_max_threads()
     if ((ncores != as.integer(ncores)) || (ncores < 1) || (ncores > max.cores)) {
@@ -124,7 +126,7 @@ RunHarmony.default <- function(
         tau <- .options$tau
         block.size <- .options$block.size
         max.iter.cluster <- .options$max.iter.cluster
-        epsilon.cluster <- .options$epsilon.cluster   
+        epsilon.cluster <- .options$epsilon.cluster
         
         
 
@@ -177,7 +179,11 @@ RunHarmony.default <- function(
         } else if (length(theta) != length(vars_use)) {
             stop('Please specify theta for each variable')
         }
-        
+        if (is.null(lambda)) {
+            lambda <- rep(1, length(vars_use))
+        } else if (length(lambda) != length(vars_use)) {
+            stop('Please specify lambda for each variable')
+        } 
                                         # determine sigma if it is a scalar
         if (length(sigma) == 1 & nclust > 1) {
             sigma <- rep(sigma, nclust)
@@ -204,14 +210,22 @@ RunHarmony.default <- function(
 
         ## Theta scaling
         theta <- theta * (1 - exp(-(N_b / (nclust * tau))^2))
-        
+        ## Caculate lambda (#covaraites) x (#levels)
+        lambda <- Reduce(c, lapply(seq_len(length(B_vec)), function(b) 
+            rep(lambda[b], B_vec[b])))
+        lambda <- c(0, lambda)
+        if(lambda_auto){
+            message(paste0("Automatic lambda estimation is enabled, ",
+                           "the value of lambda will be ignored"))
+        }
         ## RUN HARMONY
         harmonyObj <- new(harmony)
         
         harmonyObj$setup(
                        data_mat, phi,
                        sigma, theta, max.iter.cluster, epsilon.cluster,
-                       epsilon.harmony, nclust, block.size, lambda_range, B_vec, verbose
+                       epsilon.harmony, nclust, block.size,
+                       lambda, lambda_auto, lambda_range, B_vec, verbose
                    )
         
         harmonyObj$init_cluster_cpp(0)
