@@ -92,7 +92,7 @@ RunHarmony.default <- function(
   .options = harmony_options(),
   ...
   ) {
-    message('hcyao harmony v1')
+    message('theta version')
     ## Sanity check for number of cores
     max.cores <- RhpcBLASctl::omp_get_max_threads()
     if ((ncores != as.integer(ncores)) || (ncores < 1) || (ncores > max.cores)) {

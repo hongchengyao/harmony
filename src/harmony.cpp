@@ -12,7 +12,6 @@ harmony::harmony() :
     window_size(3),
     ran_setup(false),
     ran_init(false),
-    // lambda_estimation(true),
     verbose(false)
     
 {}
@@ -86,12 +85,7 @@ void harmony::allocate_buffers() {
     lambda_mat.diag() = lambda;
   }
 
-  // If lambdas are the same number then we disable the automatic parameter estimation
-  // if(lambda_range(0) == lambda_range(1)) {
-  //   lambda_mat.diag() = arma::vec(B + 1, arma::fill::value(lambda_range(0))); // Assign a scalar
-  //   lambda_mat(0,0) = 0; // Set intercept to zero
-  //   lambda_estimation = false;
-  // }
+
   W = zeros<MATTYPE>(B + 1, d);
 }
 
@@ -132,7 +126,7 @@ void harmony::compute_objective() {
   float kmeans_error = as_scalar(accu(R % dist_mat));
   float _entropy = as_scalar(accu(safe_entropy(R).each_col() % sigma)); // NEW: vector sigma
   float _cross_entropy = as_scalar(
-      accu((R.each_col() % sigma) % ((arma::repmat(theta.t(), K, 1) % log((O + 1) / (E + 1))) * Phi)));
+      accu((R.each_col() % sigma) % ((arma::repmat(theta.t(), K, 1) % log((E + O) / (E))) * Phi)));
 
   // Push back the data
   objective_kmeans.push_back(kmeans_error + _entropy + _cross_entropy);
@@ -263,7 +257,7 @@ int harmony::update_R() {
 
       // Step 2: recompute R for removed cells
       Rcells = _scale_distcells;
-      Rcells = Rcells % (harmony_pow((E + 1) / (O + 1), theta) * Phicells);
+      Rcells = Rcells % (harmony_pow((E) / (E + O), theta) * Phicells);
       Rcells = normalise(Rcells, 1, 0); // L1 norm columns
 
       // Step 3: put cells back 
