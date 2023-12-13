@@ -33,6 +33,7 @@ public:
   /* METHODS */
   void moe_correct_ridge_cpp();
   CUBETYPE moe_ridge_get_betas_cpp();
+  arma::mat get_intercept();
   int cluster_cpp();
 
   void init_cluster_cpp();

@@ -197,6 +197,10 @@ int harmony::cluster_cpp() {
   int err_status = 0;
   Progress p(max_iter_kmeans, verbose);
   unsigned iter;
+
+  // Keep Y and dist_mat fixed during clustering iterations
+  Y = get_intercept();
+  dist_mat = 2 * (1 - Y.t() * Z_cos); // Y was changed
   
   // Z_cos has changed
   // R has assumed to not change
@@ -208,10 +212,7 @@ int harmony::cluster_cpp() {
 	  return(-1);
     
       // STEP 1: Update Y (cluster centroids)
-      Y = arma::normalise(Z_cos * R.t(), 2, 0);
-
-      dist_mat = 2 * (1 - Y.t() * Z_cos); // Y was changed
-
+      // Y = arma::normalise(Z_cos * R.t(), 2, 0);
         
       // STEP 3: Update R    
       err_status = update_R();
@@ -341,6 +342,43 @@ void harmony::moe_correct_ridge_cpp() {
   Z_cos = arma::normalise(Z_corr, 2, 0);
 }
 
+arma::mat harmony::get_intercept() {
+  
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+
+  if(!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+  arma::mat Y_t = zeros<arma::mat>(K, d);
+  for (unsigned k = 0; k < K; k++) {
+    if (lambda_estimation) {
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    _Rk.diag() = R.row(k);
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+    
+    arma::mat inv_cov(arma::inv(arma::mat(Phi_Rk * Phi_moe_t + lambda_mat)));
+
+    // Calculate R-scaled PCs once
+    arma::mat Z_tmp = Z_orig.each_row() % R.row(k);
+    
+    // Generate the betas contribution of the intercept using the data
+    // This erases whatever was written before in W
+    W = inv_cov.unsafe_col(0) * sum(Z_tmp, 1).t();
+
+    // Calculate betas by calculating each batch contribution
+    for(unsigned b=0; b < B; b++) {
+      // inv_conv is B+1xB+1 whereas index is B long
+      W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(index[b]), 1).t();
+    }
+    Y_t.row(k) = W.row(0);
+  }
+  return arma::normalise(Y_t.t(), 2, 0);
+}
+
+
 CUBETYPE harmony::moe_ridge_get_betas_cpp() {
   CUBETYPE W_cube(B+1, d, K); // rows, cols, slices
 
@@ -355,7 +393,7 @@ CUBETYPE harmony::moe_ridge_get_betas_cpp() {
   for (unsigned k = 0; k < K; k++) {
       _Rk.diag() = R.row(k);
       if (lambda_estimation){
-        lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+        lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t()); 
       }
       arma::sp_mat Phi_Rk = Phi_moe * _Rk;
       W_cube.slice(k) = arma::inv(arma::mat(Phi_Rk * Phi_moe_t + lambda_mat)) * Phi_Rk * Z_orig.t();

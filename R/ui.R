@@ -113,7 +113,7 @@ RunHarmony.default <- function(
     ## set threads and harmony runs in single-thread mode
     set.cores <- setOMPthreads(ncores)
     
-    
+    message('use beta0 as centroid, update beta0 during clustering iteration')
     tryCatch({
         ## Check legacy arguments
         check_legacy_args(...)
