@@ -25,28 +25,34 @@ public:
   
   void setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
 	     const VECTYPE __sigma, const VECTYPE __theta,
-	     const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
+	    //  const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
+	     const VECTYPE __lambda, const float __alpha, const int __max_iter_harmony,
 	     const float __epsilon_kmeans, const float __epsilon_harmony,
 	     const int __K, const float __block_size, 
 	     const vector<int>& __B_vec, const bool __verbose);
   
   /* METHODS */
   void moe_correct_ridge_cpp();
-  CUBETYPE moe_ridge_get_betas_cpp();
-  arma::mat get_intercept();
-  int cluster_cpp();
+  // CUBETYPE moe_ridge_get_betas_cpp();
+  // arma::mat get_intercept();
+  // int cluster_cpp();
 
   void init_cluster_cpp();
   void allocate_buffers();
   void compute_objective(); 
-  int update_R();
+  // int update_R();
   bool check_convergence(int type);
-  void setY(const MATTYPE& Z);
+  // void setY(const MATTYPE& Z);
+  int main_loop_cpp();
+  void moe_ridge_update_betas_cpp();
+  void update_R0();
+  int update_R_theta();
 
   /* FIELDS */
-  MATTYPE R, Z_orig, Z_corr, Z_cos, Y;
+  MATTYPE R, R_theta, Z_orig, Z_corr, Z_cos, Y;
   arma::sp_mat Phi, Phi_moe, Phi_moe_t, Phi_t, Rk;
   VECTYPE Pr_b, theta, N_b, sigma, lambda;
+  CUBETYPE W_cube;
 
   // auxilary data structures
   vector<float> objective_kmeans, objective_kmeans_dist, objective_kmeans_entropy, objective_kmeans_cross, objective_harmony;
@@ -54,11 +60,14 @@ public:
   std::vector<arma::uvec>index;
   
   float block_size, epsilon_kmeans, epsilon_harmony, alpha;
-  unsigned int N, K, B, d, max_iter_kmeans, window_size;
+  // unsigned int N, K, B, d, max_iter_kmeans, window_size;
+  unsigned int N, K, B, d, max_iter_harmony, window_size;
+
 
   // buffers
   MATTYPE W, _scale_dist, dist_mat, O, E, dir_prior; // N_k, N_kb, N_b, numerator, denominator, C;
   uvec update_order, cells_update;
+  arma::rowvec Yk_t;
   
 
   // flags

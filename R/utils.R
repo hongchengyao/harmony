@@ -12,38 +12,56 @@
 #' @return return value of rhs function. 
 NULL
 
+
 harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
-    if (iter_harmony < 1) {
+    if(iter_harmony<1){
         return(0)
     }
-    
-    for (iter in seq_len(iter_harmony)) {
-        if (verbose) {
-            message(gettextf('Harmony %d/%d', iter, iter_harmony))        
-        }
-        
-        # STEP 1: do clustering
-        err_status <- harmonyObj$cluster_cpp()
-        if (err_status == -1) {
-            stop('terminated by user')
-        } else if (err_status != 0) {
-            stop(gettextf('Harmony exited with non-zero exit status: %d', 
-                            err_status))
-        }
-        
-        # STEP 2: regress out covariates
-        harmonyObj$moe_correct_ridge_cpp()
-        
-        # STEP 3: check for convergence
-        if (harmonyObj$check_convergence(1)) {
-            if (verbose) {
-                message(gettextf("Harmony converged after %d iterations", 
-                        iter))    
-            }
-            return(0)
-        }
+    for(iter in seq_len(iter_harmony)){
+        err_status <- harmonyObj$main_loop_cpp()
     }
+    harmonyObj$moe_correct_ridge_cpp() # calculate beta in the end 
 }
+
+
+
+
+
+# harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
+#     if (iter_harmony < 1) {
+#         return(0)
+#     }
+    
+#     for (iter in seq_len(iter_harmony)) {
+#         if (verbose) {
+#             message(gettextf('Harmony %d/%d', iter, iter_harmony))        
+#         }
+        
+#         # STEP 1: do clustering
+#         # err_status <- harmonyObj$cluster_cpp()
+#         err_status <- harmonyObj$main_loop_cpp()
+
+#         if (err_status == -1) {
+#             stop('terminated by user')
+#         } else if (err_status != 0) {
+#             stop(gettextf('Harmony exited with non-zero exit status: %d', 
+#                             err_status))
+#         }
+        
+#         # # STEP 2: regress out covariates
+#         # harmonyObj$moe_correct_ridge_cpp()
+        
+#         # STEP 3: check for convergence
+#         if (harmonyObj$check_convergence(1)) {
+#             if (verbose) {
+#                 message(gettextf("Harmony converged after %d iterations", 
+#                         iter))    
+#             }
+#             return(0)
+#         }
+#     }
+#     harmonyObj$moe_correct_ridge_cpp() # calculate beta in the end 
+# }
 
 
 

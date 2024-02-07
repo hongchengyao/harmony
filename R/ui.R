@@ -113,7 +113,7 @@ RunHarmony.default <- function(
     ## set threads and harmony runs in single-thread mode
     set.cores <- setOMPthreads(ncores)
     
-    message('use beta0 as centroid, fix beta0 during clustering iteration')
+    # message('use beta0 as centroid, fix beta0 during clustering iteration')
     tryCatch({
         ## Check legacy arguments
         check_legacy_args(...)
@@ -261,7 +261,8 @@ RunHarmony.default <- function(
         
         harmonyObj$setup(
                        data_mat, phi, sigma, theta, lambda_vec, alpha,
-                       max.iter.cluster, epsilon.cluster,
+                    #    max.iter.cluster, epsilon.cluster,
+                       max.iter.harmony, epsilon.cluster,
                        epsilon.harmony, nclust, block.size,
                        B_vec, verbose
                    )
