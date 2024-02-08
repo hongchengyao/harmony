@@ -12,7 +12,7 @@
 #' @return return value of rhs function. 
 NULL
 
-harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
+harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FALSE) {
     if (iter_harmony < 1) {
         return(0)
     }
@@ -23,7 +23,11 @@ harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE) {
         }
         
         # STEP 1: do clustering
-        err_status <- harmonyObj$cluster_cpp()
+        if(beta_centroid){
+            err_status <- harmonyObj$beta_centroid_cluster_cpp()
+        } else{
+            err_status <- harmonyObj$cluster_cpp()
+        }
         if (err_status == -1) {
             stop('terminated by user')
         } else if (err_status != 0) {

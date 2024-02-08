@@ -102,6 +102,7 @@ RunHarmony.default <- function(
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
+  beta_centroid = FALSE,
   .options = harmony_options(),
   ...
   ) {
@@ -113,7 +114,7 @@ RunHarmony.default <- function(
     ## set threads and harmony runs in single-thread mode
     set.cores <- setOMPthreads(ncores)
     
-    
+    message("The beta_centroid_option branch is used")
     tryCatch({
         ## Check legacy arguments
         check_legacy_args(...)
@@ -270,9 +271,12 @@ RunHarmony.default <- function(
         if (verbose) {
             message("Initializing state using k-means centroids initialization")
         }
+        if(beta_centroid){
+            message("Use beta_0 as centroid during clustering step")
+        }
         harmonyObj$init_cluster_cpp()
         
-        harmonize(harmonyObj, max.iter.harmony, verbose)
+        harmonize(harmonyObj, max.iter.harmony, verbose, beta_centroid)
         
         if (plot_convergence) graphics::plot(HarmonyConvergencePlot(harmonyObj))
 

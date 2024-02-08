@@ -34,6 +34,7 @@ public:
   void moe_correct_ridge_cpp();
   CUBETYPE moe_ridge_get_betas_cpp();
   int cluster_cpp();
+  int beta_centroid_cluster_cpp();
 
   void init_cluster_cpp();
   void allocate_buffers();
@@ -56,12 +57,12 @@ public:
   unsigned int N, K, B, d, max_iter_kmeans, window_size;
 
   // buffers
-  MATTYPE W, _scale_dist, dist_mat, O, E, dir_prior; // N_k, N_kb, N_b, numerator, denominator, C;
+  MATTYPE W, _scale_dist, dist_mat, O, E, dir_prior, W_0; // N_k, N_kb, N_b, numerator, denominator, C;
   uvec update_order, cells_update;
   
 
   // flags
-  bool ran_setup, ran_init, lambda_estimation,  verbose; // do_merge_R;
+  bool ran_setup, ran_init, lambda_estimation, verbose; // do_merge_R;
   
 };
 

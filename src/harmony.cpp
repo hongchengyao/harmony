@@ -111,6 +111,7 @@ void harmony::allocate_buffers() {
 
 
   W = zeros<MATTYPE>(B + 1, d);
+  W_0 = zeros<MATTYPE>(d, K); // Stores intercept 
 }
 
 
@@ -120,7 +121,8 @@ void harmony::init_cluster_cpp() {
   
   // Cosine normalization of data centrods
   Y = arma::normalise(Y, 2, 0);
-
+  
+  W_0 = Y; // initialize W_0 to be Y initilized
   // (2) ASSIGN CLUSTER PROBABILITIES
   // using a nice property of cosine distance,
   // compute squared distance directly with cross product
@@ -205,7 +207,7 @@ int harmony::cluster_cpp() {
       
       p.increment();
       if (Progress::check_abort())
-	  return(-1);
+        return(-1);
     
       // STEP 1: Update Y (cluster centroids)
       Y = arma::normalise(Z_cos * R.t(), 2, 0);
@@ -216,19 +218,19 @@ int harmony::cluster_cpp() {
       // STEP 3: Update R    
       err_status = update_R();
       if (err_status != 0) {
-	  // Rcout << "Compute R failed. Exiting from clustering." << endl;
-	  return err_status;
+        // Rcout << "Compute R failed. Exiting from clustering." << endl;
+        return err_status;
       }
     
       // STEP 4: Check for convergence
       compute_objective();
     
       if (iter > window_size) {
-	  bool convergence_status = check_convergence(0);
-	  if (convergence_status) {
-	      iter++;
-	      break;
-	  }
+        bool convergence_status = check_convergence(0);
+        if (convergence_status) {
+          iter++;
+          break;
+        }
       }
   }
   
@@ -238,6 +240,49 @@ int harmony::cluster_cpp() {
 }
 
 
+int harmony::beta_centroid_cluster_cpp() {
+  int err_status = 0;
+  Progress p(max_iter_kmeans, verbose);
+  unsigned iter;
+  
+  // Z_cos has changed
+  // R has assumed to not change
+  // so update Y to match new integrated data  
+
+
+  // Set Y (cluster centroids) to W_0 and remain the same during beta_centroid_cluster_cpp
+  Y = arma::normalise(W_0, 2, 0);
+  dist_mat = 2 * (1 - Y.t() * Z_cos); // Y was changed
+
+  for (iter = 0; iter < max_iter_kmeans; iter++) {
+      
+      p.increment();
+      if (Progress::check_abort())
+        return(-1);
+
+      // STEP 3: Update R    
+      err_status = update_R();
+      if (err_status != 0) {
+        // Rcout << "Compute R failed. Exiting from clustering." << endl;
+        return err_status;
+      }
+    
+      // STEP 4: Check for convergence
+      compute_objective();
+    
+      if (iter > window_size) {
+        bool convergence_status = check_convergence(0);
+        if (convergence_status) {
+          iter++;
+          break;
+        }
+      }
+  }
+  
+  kmeans_rounds.push_back(iter);
+  objective_harmony.push_back(objective_kmeans.back());
+  return 0;
+}
 
 
 
@@ -335,6 +380,8 @@ void harmony::moe_correct_ridge_cpp() {
       W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(index[b]), 1).t();
     }
     
+    W_0.col(k) = W.row(0).t();
+
     W.row(0).zeros(); // do not remove the intercept
     Z_corr -= W.t() * Phi_Rk;
   }
@@ -381,6 +428,7 @@ RCPP_MODULE(harmony_module) {
       .field("Y", &harmony::Y)
       .field("Pr_b", &harmony::Pr_b)
       .field("W", &harmony::W)
+      .field("W_0", &harmony::W_0)
       .field("R", &harmony::R)
       .field("theta", &harmony::theta)
       .field("sigma", &harmony::sigma)
@@ -396,7 +444,8 @@ RCPP_MODULE(harmony_module) {
       .method("setup", &harmony::setup)
       .method("compute_objective", &harmony::compute_objective)
       .method("init_cluster_cpp", &harmony::init_cluster_cpp)
-      .method("cluster_cpp", &harmony::cluster_cpp)	  
+      .method("cluster_cpp", &harmony::cluster_cpp)
+      .method("beta_centroid_cluster_cpp", &harmony::beta_centroid_cluster_cpp)
       .method("moe_correct_ridge_cpp", &harmony::moe_correct_ridge_cpp)
       .method("moe_ridge_get_betas_cpp", &harmony::moe_ridge_get_betas_cpp)
       .field("B_vec", &harmony::B_vec)
