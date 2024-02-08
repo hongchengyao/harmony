@@ -102,6 +102,7 @@ RunHarmony.default <- function(
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
+  conserve_correct = FALSE,
   .options = harmony_options(),
   ...
   ) {
@@ -113,7 +114,7 @@ RunHarmony.default <- function(
     ## set threads and harmony runs in single-thread mode
     set.cores <- setOMPthreads(ncores)
     
-    
+    message('beta as centroid test version')
     tryCatch({
         ## Check legacy arguments
         check_legacy_args(...)
@@ -263,7 +264,7 @@ RunHarmony.default <- function(
                        data_mat, phi, sigma, theta, lambda_vec, alpha,
                        max.iter.cluster, epsilon.cluster,
                        epsilon.harmony, nclust, block.size,
-                       B_vec, verbose
+                       B_vec, verbose, conserve_correct
                    )
 
         

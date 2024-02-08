@@ -18,6 +18,7 @@
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
+  conserve_correct = FALSE,
   .options = harmony_options(),
   ...
 )

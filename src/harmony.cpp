@@ -23,7 +23,7 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
                     const VECTYPE __sigma, const VECTYPE __theta, const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
                     const float __epsilon_kmeans, const float __epsilon_harmony,
                     const int __K, const float __block_size,
-                    const std::vector<int>& __B_vec, const bool __verbose) {
+                    const std::vector<int>& __B_vec, const bool __verbose, const bool __conserve_correct) {
     
   // Algorithm constants
   N = __Z.n_cols;
@@ -86,6 +86,7 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
   max_iter_kmeans = __max_iter_kmeans;
 
   verbose = __verbose;
+  conserve_correct = __conserve_correct;
   
   allocate_buffers();
   ran_setup = true;
@@ -98,7 +99,7 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
 
 void harmony::allocate_buffers() {
   
-  _scale_dist = zeros<MATTYPE>(K, N);
+  _scale_dist = zeros<MATTYPE>(K, N); // _scale_dist is the same as R_0
   dist_mat = zeros<MATTYPE>(K, N);
   O = E = zeros<MATTYPE>(K, B);
   
@@ -111,6 +112,7 @@ void harmony::allocate_buffers() {
 
 
   W = zeros<MATTYPE>(B + 1, d);
+  W_0 = zeros<MATTYPE>(d, K); // Stores intercept 
 }
 
 
@@ -121,6 +123,7 @@ void harmony::init_cluster_cpp() {
   // Cosine normalization of data centrods
   Y = arma::normalise(Y, 2, 0);
 
+  W_0 = Y; // initialize W_0 to be Y initilized
   // (2) ASSIGN CLUSTER PROBABILITIES
   // using a nice property of cosine distance,
   // compute squared distance directly with cross product
@@ -201,16 +204,16 @@ int harmony::cluster_cpp() {
   // Z_cos has changed
   // R has assumed to not change
   // so update Y to match new integrated data  
-  for (iter = 0; iter < max_iter_kmeans; iter++) {
+    
+      // STEP 1: Update Y (cluster centroids)
+      Y = arma::normalise(W_0, 2, 0); // Y is set to W_0 and remain the same during cluster_cpp
+      dist_mat = 2 * (1 - Y.t() * Z_cos); // Y was changed
+      
+  for (iter = 0; iter < max_iter_kmeans; iter++) { // keep iterating in case one round of update_R is not enough
       
       p.increment();
       if (Progress::check_abort())
 	  return(-1);
-    
-      // STEP 1: Update Y (cluster centroids)
-      Y = arma::normalise(Z_cos * R.t(), 2, 0);
-
-      dist_mat = 2 * (1 - Y.t() * Z_cos); // Y was changed
 
         
       // STEP 3: Update R    
@@ -255,7 +258,7 @@ int harmony::update_R() {
   _scale_dist = -dist_mat; // K x N
   _scale_dist.each_col() /= sigma; // NEW: vector sigma
   _scale_dist = exp(_scale_dist);
-  _scale_dist = arma::normalise(_scale_dist, 1, 0);
+  _scale_dist = arma::normalise(_scale_dist, 1, 0); // after this step, _scale_dist is the same as R_0
 
   // GENERAL CASE: online updates, in blocks of size (N * block_size)
   unsigned n_blocks = (int)(my_ceil(1.0 / block_size));
@@ -335,8 +338,14 @@ void harmony::moe_correct_ridge_cpp() {
       W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(index[b]), 1).t();
     }
     
+    W_0.col(k) = W.row(0).t();
     W.row(0).zeros(); // do not remove the intercept
-    Z_corr -= W.t() * Phi_Rk;
+    if(conserve_correct){
+      _Rk.diag() = _scale_dist.row(k);
+      Z_corr -= W.t() * Phi_moe * _Rk;
+    } else {
+      Z_corr -= W.t() * Phi_Rk;
+    }
   }
   Z_cos = arma::normalise(Z_corr, 2, 0);
 }
@@ -381,6 +390,7 @@ RCPP_MODULE(harmony_module) {
       .field("Y", &harmony::Y)
       .field("Pr_b", &harmony::Pr_b)
       .field("W", &harmony::W)
+      .field("W_0", &harmony::W_0)
       .field("R", &harmony::R)
       .field("theta", &harmony::theta)
       .field("sigma", &harmony::sigma)
