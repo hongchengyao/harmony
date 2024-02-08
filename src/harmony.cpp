@@ -23,7 +23,7 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
                     const VECTYPE __sigma, const VECTYPE __theta, const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
                     const float __epsilon_kmeans, const float __epsilon_harmony,
                     const int __K, const float __block_size,
-                    const std::vector<int>& __B_vec, const bool __verbose) {
+                    const std::vector<int>& __B_vec, const bool __verbose, const bool __conserve_correct) {
     
   // Algorithm constants
   N = __Z.n_cols;
@@ -86,7 +86,8 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
   max_iter_kmeans = __max_iter_kmeans;
 
   verbose = __verbose;
-  
+  conserve_correct = __conserve_correct;
+
   allocate_buffers();
   ran_setup = true;
 
@@ -336,7 +337,12 @@ void harmony::moe_correct_ridge_cpp() {
     }
     
     W.row(0).zeros(); // do not remove the intercept
-    Z_corr -= W.t() * Phi_Rk;
+    if(conserve_correct){
+      _Rk.diag() = _scale_dist.row(k);
+      Z_corr -= W.t() * Phi_moe * _Rk;
+    }else{
+      Z_corr -= W.t() * Phi_Rk;
+    }
   }
   Z_cos = arma::normalise(Z_corr, 2, 0);
 }

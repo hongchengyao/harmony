@@ -102,11 +102,12 @@ RunHarmony.default <- function(
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
+  conserve_correct = FALSE,
   .options = harmony_options(),
   ...
   ) {
     
-
+    message('less correct test version')
     ## Try to set number of OPENBLAS cores for harmony.
     ## the function tries to set OpenMP threads
     ## In case OpenMP is not supported it returns FALSE so we don't
@@ -263,7 +264,7 @@ RunHarmony.default <- function(
                        data_mat, phi, sigma, theta, lambda_vec, alpha,
                        max.iter.cluster, epsilon.cluster,
                        epsilon.harmony, nclust, block.size,
-                       B_vec, verbose
+                       B_vec, verbose, conserve_correct
                    )
 
         

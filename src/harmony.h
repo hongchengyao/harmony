@@ -28,7 +28,7 @@ public:
 	     const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
 	     const float __epsilon_kmeans, const float __epsilon_harmony,
 	     const int __K, const float __block_size, 
-	     const vector<int>& __B_vec, const bool __verbose);
+	     const vector<int>& __B_vec, const bool __verbose, const bool __conserve_correct);
   
   /* METHODS */
   void moe_correct_ridge_cpp();
@@ -61,7 +61,7 @@ public:
   
 
   // flags
-  bool ran_setup, ran_init, lambda_estimation,  verbose; // do_merge_R;
+  bool ran_setup, ran_init, lambda_estimation,  verbose, conserve_correct; // do_merge_R;
   
 };
 
