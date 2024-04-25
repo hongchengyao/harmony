@@ -103,6 +103,7 @@ RunHarmony.default <- function(
   return_object = FALSE,
   verbose = TRUE,
   beta_centroid = FALSE,
+  final_R0 = FALSE,
   .options = harmony_options(),
   ...
   ) {
@@ -274,9 +275,13 @@ RunHarmony.default <- function(
         if(beta_centroid){
             message("Use beta_0 as centroid during clustering step")
         }
+        
+        if(final_R0){
+            message("Use final beta to calculate R0 and then calculate Z_corr")
+        }
         harmonyObj$init_cluster_cpp()
         
-        harmonize(harmonyObj, max.iter.harmony, verbose, beta_centroid)
+        harmonize(harmonyObj, max.iter.harmony, verbose, beta_centroid, final_R0)
         
         if (plot_convergence) graphics::plot(HarmonyConvergencePlot(harmonyObj))
 

@@ -112,6 +112,7 @@ void harmony::allocate_buffers() {
 
   W = zeros<MATTYPE>(B + 1, d);
   W_0 = zeros<MATTYPE>(d, K); // Stores intercept 
+  W_cube = zeros<CUBETYPE>(B+1, d, K); // Stores all the betas
 }
 
 
@@ -381,7 +382,7 @@ void harmony::moe_correct_ridge_cpp() {
     }
     
     W_0.col(k) = W.row(0).t();
-
+    W_cube.slice(k) = W;
     W.row(0).zeros(); // do not remove the intercept
     Z_corr -= W.t() * Phi_Rk;
   }
@@ -411,6 +412,49 @@ CUBETYPE harmony::moe_ridge_get_betas_cpp() {
   return W_cube;
 }
 
+void harmony::R0_final_correct_cpp(){
+  // arma::mat _Rk(N, N);
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+  
+  if (!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+
+  // Step1, calculate R0 with final W_cube 
+  R0 = zeros<MATTYPE>(K, N); // initialize R0
+  Y = arma::normalise(W_0, 2, 0);
+  for (unsigned k = 0; k < K; k++) {
+    Z_corr = Z_orig;
+    W = W_cube.slice(k);
+    W.row(0).zeros(); // do not remove the intercept
+    Z_corr = Z_corr - W.t() * Phi_moe;
+    Z_cos = arma::normalise(Z_corr, 2, 0);
+    R0.row(k) = -2 * (1 - Y.col(k).t() * Z_cos); 
+  }
+  R0.each_col() /= sigma; 
+  R0 = exp(R0);
+  R0 = arma::normalise(R0, 1, 0);
+
+  // Step2, use R0 to calculate final Z_corr
+  Z_corr = Z_orig;
+  for(unsigned k = 0; k < K; k++){
+    _Rk.diag() = R0.row(k);
+    if (lambda_estimation){ // lambda_estimation may not be very useful here
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+    W =  arma::inv(arma::mat(Phi_Rk * Phi_moe_t + lambda_mat)) * Phi_Rk * Z_orig.t();
+    W.row(0).zeros();
+    Z_corr = Z_corr - W.t() * Phi_Rk; // calculate the final Z_corr
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0); // calculate the final Z_cos
+}
+
+
+
+
 RCPP_MODULE(harmony_module) {
   class_<harmony>("harmony")
       .constructor()
@@ -429,7 +473,9 @@ RCPP_MODULE(harmony_module) {
       .field("Pr_b", &harmony::Pr_b)
       .field("W", &harmony::W)
       .field("W_0", &harmony::W_0)
+      .field("W_cube", &harmony::W_cube)
       .field("R", &harmony::R)
+      .field("R0", &harmony::R0)
       .field("theta", &harmony::theta)
       .field("sigma", &harmony::sigma)
       .field("lambda", &harmony::lambda)
@@ -448,6 +494,7 @@ RCPP_MODULE(harmony_module) {
       .method("beta_centroid_cluster_cpp", &harmony::beta_centroid_cluster_cpp)
       .method("moe_correct_ridge_cpp", &harmony::moe_correct_ridge_cpp)
       .method("moe_ridge_get_betas_cpp", &harmony::moe_ridge_get_betas_cpp)
+      .method("R0_final_correct_cpp", &harmony::R0_final_correct_cpp)
       .field("B_vec", &harmony::B_vec)
       .field("alpha", &harmony::alpha)
       ;

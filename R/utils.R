@@ -12,7 +12,7 @@
 #' @return return value of rhs function. 
 NULL
 
-harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FALSE) {
+harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FALSE, final_R0 = FALSE) {
     if (iter_harmony < 1) {
         return(0)
     }
@@ -46,6 +46,9 @@ harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FA
             }
             return(0)
         }
+    }
+    if(final_R0){
+        harmonyObj$R0_final_correct_cpp()
     }
 }
 

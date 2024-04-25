@@ -19,6 +19,7 @@
   return_object = FALSE,
   verbose = TRUE,
   beta_centroid = FALSE,
+  final_R0 = FALSE,
   .options = harmony_options(),
   ...
 )
