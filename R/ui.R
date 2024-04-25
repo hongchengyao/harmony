@@ -102,8 +102,6 @@ RunHarmony.default <- function(
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
-  beta_centroid = FALSE,
-  final_R0 = FALSE,
   .options = harmony_options(),
   ...
   ) {
@@ -115,7 +113,6 @@ RunHarmony.default <- function(
     ## set threads and harmony runs in single-thread mode
     set.cores <- setOMPthreads(ncores)
     
-    message("The beta_centroid_option branch is used")
     tryCatch({
         ## Check legacy arguments
         check_legacy_args(...)
@@ -146,6 +143,8 @@ RunHarmony.default <- function(
         block.size <- .options$block.size
         max.iter.cluster <- .options$max.iter.cluster
         epsilon.cluster <- .options$epsilon.cluster   
+        beta_centroid <- .options$beta_centroid
+        final_R0 <- .options$final_R0
         
         
 

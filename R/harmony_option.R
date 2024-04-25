@@ -30,7 +30,10 @@ harmony_options <- function(
   block.size = 0.05,
   max.iter.cluster = 20,
   epsilon.cluster = 1e-3,
-  epsilon.harmony = 1e-2) {
+  epsilon.harmony = 1e-2,
+  beta_centroid = FALSE,
+  final_R0 = FALSE
+  ) {
     
     block.size <- validate_block.size(block.size)
     
@@ -40,7 +43,9 @@ harmony_options <- function(
         block.size = block.size,
         max.iter.cluster = max.iter.cluster,
         epsilon.cluster = epsilon.cluster,
-        epsilon.harmony = epsilon.harmony
+        epsilon.harmony = epsilon.harmony,
+        beta_centroid = beta_centroid,
+        final_R0 = final_R0
     )
     out <- structure(out, class = "harmony_options")
     return(out)
