@@ -28,11 +28,17 @@ public:
 	     const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
 	     const float __epsilon_kmeans, const float __epsilon_harmony,
 	     const int __K, const float __block_size, 
-	     const vector<int>& __B_vec, const bool __verbose);
+	     const vector<int>& __B_vec, const bool __verbose, const float __sample_num);
   
   /* METHODS */
   void moe_correct_ridge_cpp();
   void R0_final_correct_cpp();
+  void downsample_moe_correct_ridge_cpp();
+  void simple_downsample_moe_correct_ridge_cpp();
+  void sampleOnce();
+  void once_downsample_moe_correct_ridge_cpp();
+  void once_simple_downsample_moe_correct_ridge_cpp();
+  void average_moe_correct_ridge_cpp();
   CUBETYPE moe_ridge_get_betas_cpp();
   int cluster_cpp();
   int beta_centroid_cluster_cpp();
@@ -45,7 +51,7 @@ public:
   void setY(const MATTYPE& Z);
 
   /* FIELDS */
-  MATTYPE R, Z_orig, Z_corr, Z_cos, Y, R0;
+  MATTYPE R, Z_orig, Z_corr, Z_cos, Y, R0, idxAndWeight, R_hard;
   arma::sp_mat Phi, Phi_moe, Phi_moe_t, Phi_t, Rk;
   VECTYPE Pr_b, theta, N_b, sigma, lambda;
   // auxilary data structures
@@ -53,13 +59,14 @@ public:
   vector<int> kmeans_rounds, B_vec; // OLD: Kb
   std::vector<arma::uvec>index;
   
-  float block_size, epsilon_kmeans, epsilon_harmony, alpha;
+
+  float block_size, epsilon_kmeans, epsilon_harmony, alpha, sample_num;
   unsigned int N, K, B, d, max_iter_kmeans, window_size;
 
   // buffers
   MATTYPE W, _scale_dist, dist_mat, O, E, dir_prior, W_0; // N_k, N_kb, N_b, numerator, denominator, C;
   CUBETYPE W_cube;
-  uvec update_order, cells_update;
+  uvec update_order, cells_update, sample_index_b;
   
 
   // flags

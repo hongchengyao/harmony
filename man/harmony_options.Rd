@@ -10,7 +10,9 @@ harmony_options(
   block.size = 0.05,
   max.iter.cluster = 20,
   epsilon.cluster = 0.001,
-  epsilon.harmony = 0.01
+  epsilon.harmony = 0.01,
+  beta_centroid = FALSE,
+  final_R0 = FALSE
 )
 }
 \arguments{

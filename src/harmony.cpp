@@ -23,7 +23,7 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
                     const VECTYPE __sigma, const VECTYPE __theta, const VECTYPE __lambda, const float __alpha, const int __max_iter_kmeans,
                     const float __epsilon_kmeans, const float __epsilon_harmony,
                     const int __K, const float __block_size,
-                    const std::vector<int>& __B_vec, const bool __verbose) {
+                    const std::vector<int>& __B_vec, const bool __verbose, const float __sample_num) {
     
   // Algorithm constants
   N = __Z.n_cols;
@@ -62,7 +62,7 @@ void harmony::setup(const MATTYPE& __Z, const arma::sp_mat& __Phi,
   
   epsilon_kmeans = __epsilon_kmeans;
   epsilon_harmony = __epsilon_harmony;
-
+  sample_num = __sample_num;
   // Hyperparameters
   K = __K;
   if (__lambda(0) == -1) {
@@ -455,6 +455,278 @@ void harmony::R0_final_correct_cpp(){
 
 
 
+void harmony::downsample_moe_correct_ridge_cpp() {
+  
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+
+  // Generate Rh matrix
+  R_hard = make_R_hard(R);
+  // Get the sample cell index and weight per cell
+  idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
+  arma::uvec sampleIdx = conv_to<uvec>::from(idxAndWeight.col(0));
+
+  if(!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+  Z_corr = Z_orig;
+  Progress p(K, verbose);
+  for (unsigned k = 0; k < K; k++) {
+    p.increment();
+    if (Progress::check_abort())
+      return;
+    if (lambda_estimation) {
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    _Rk.diag() = R.row(k);
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+    
+    // arma::sp_mat _Rk_ds(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    arma::uvec uvec_k(1);
+    uvec_k(0) = k;
+    // _Rk_ds.diag() = R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t();
+    // arma::sp_mat Phi_Rk_ds = Phi_moe.cols(sampleIdx) * _Rk_ds;
+    arma::sp_mat weight(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    weight.diag() = idxAndWeight.col(1);
+    arma::sp_mat Phi_Rk_ds = Phi_Rk.cols(sampleIdx) * weight;
+
+    arma::mat inv_cov(arma::inv(arma::mat(Phi_Rk_ds * Phi_moe.cols(sampleIdx).t() + lambda_mat)));
+    // Calculate R-scaled PCs once
+    arma::mat Z_tmp = Z_orig.cols(sampleIdx);
+    Z_tmp = Z_tmp.each_row() % (R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t());
+    
+    // Generate the betas contribution of the intercept using the data
+    // This erases whatever was written before in W
+    W = inv_cov.unsafe_col(0) * sum(Z_tmp, 1).t();
+
+    // Calculate betas by calculating each batch contribution
+    for(unsigned b=0; b < B; b++) {
+      // inv_conv is B+1xB+1 whereas index is B long
+      W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(find(idxAndWeight.col(2) == b)), 1).t();
+    }
+    
+    W_0.col(k) = W.row(0).t();
+    W_cube.slice(k) = W;
+    W.row(0).zeros(); // do not remove the intercept
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+void harmony::simple_downsample_moe_correct_ridge_cpp() {
+  
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+
+  // Generate Rh matrix
+  R_hard = make_R_hard(R);
+  // Get the sample cell index and weight per cell
+  idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
+  arma::uvec sampleIdx = conv_to<uvec>::from(idxAndWeight.col(0));
+  if(!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+  Z_corr = Z_orig;
+  Progress p(K, verbose);
+  for (unsigned k = 0; k < K; k++) {
+    p.increment();
+    if (Progress::check_abort())
+      return;
+    if (lambda_estimation) {
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    _Rk.diag() = R.row(k);
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+
+    // arma::sp_mat _Rk_ds(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    arma::uvec uvec_k(1);
+    uvec_k(0) = k;
+    // _Rk_ds.diag() = R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t();
+    // arma::sp_mat Phi_Rk_ds = Phi_moe.cols(sampleIdx) * _Rk_ds;
+    arma::sp_mat weight(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    weight.diag() = idxAndWeight.col(1);
+    arma::sp_mat Phi_Rk_ds = Phi_Rk.cols(sampleIdx) * weight;
+    
+
+    W = arma::inv(arma::mat(Phi_Rk_ds * Phi_moe.cols(sampleIdx).t() + lambda_mat)) * Phi_Rk_ds * Z_orig.cols(sampleIdx).t();
+    W_0.col(k) = W.row(0).t();
+    W_cube.slice(k) = W;
+    W.row(0).zeros(); // do not remove the intercept
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+
+void harmony::sampleOnce(){
+  R_hard = make_R_hard(R);
+  idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
+}
+
+
+void harmony::once_downsample_moe_correct_ridge_cpp() {
+  
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+
+  // Generate Rh matrix
+  // R_hard = make_R_hard(R);
+  // Get the sample cell index and weight per cell
+  // idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
+  arma::uvec sampleIdx = conv_to<uvec>::from(idxAndWeight.col(0));
+
+  if(!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+  Z_corr = Z_orig;
+  Progress p(K, verbose);
+  for (unsigned k = 0; k < K; k++) {
+    p.increment();
+    if (Progress::check_abort())
+      return;
+    if (lambda_estimation) {
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    _Rk.diag() = R.row(k);
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+    
+    // arma::sp_mat _Rk_ds(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    arma::uvec uvec_k(1);
+    uvec_k(0) = k;
+    // _Rk_ds.diag() = R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t();
+    // arma::sp_mat Phi_Rk_ds = Phi_moe.cols(sampleIdx) * _Rk_ds;
+    arma::sp_mat weight(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    weight.diag() = idxAndWeight.col(1);
+    arma::sp_mat Phi_Rk_ds = Phi_Rk.cols(sampleIdx) * weight;
+
+    arma::mat inv_cov(arma::inv(arma::mat(Phi_Rk_ds * Phi_moe.cols(sampleIdx).t() + lambda_mat)));
+    // Calculate R-scaled PCs once
+    arma::mat Z_tmp = Z_orig.cols(sampleIdx);
+    Z_tmp = Z_tmp.each_row() % (R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t());
+    
+    // Generate the betas contribution of the intercept using the data
+    // This erases whatever was written before in W
+    W = inv_cov.unsafe_col(0) * sum(Z_tmp, 1).t();
+
+    // Calculate betas by calculating each batch contribution
+    for(unsigned b=0; b < B; b++) {
+      // inv_conv is B+1xB+1 whereas index is B long
+      W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(find(idxAndWeight.col(2) == b)), 1).t();
+    }
+    
+    W_0.col(k) = W.row(0).t();
+    W_cube.slice(k) = W;
+    W.row(0).zeros(); // do not remove the intercept
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+void harmony::once_simple_downsample_moe_correct_ridge_cpp() {
+  
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+
+  // Generate Rh matrix
+  // R_hard = make_R_hard(R);
+  // Get the sample cell index and weight per cell
+  // idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
+  arma::uvec sampleIdx = conv_to<uvec>::from(idxAndWeight.col(0));
+  if(!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+  Z_corr = Z_orig;
+  Progress p(K, verbose);
+  for (unsigned k = 0; k < K; k++) {
+    p.increment();
+    if (Progress::check_abort())
+      return;
+    if (lambda_estimation) {
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    _Rk.diag() = R.row(k);
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+
+    // arma::sp_mat _Rk_ds(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    arma::uvec uvec_k(1);
+    uvec_k(0) = k;
+    // _Rk_ds.diag() = R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t();
+    // arma::sp_mat Phi_Rk_ds = Phi_moe.cols(sampleIdx) * _Rk_ds;
+    arma::sp_mat weight(idxAndWeight.n_rows, idxAndWeight.n_rows);
+    weight.diag() = idxAndWeight.col(1);
+    arma::sp_mat Phi_Rk_ds = Phi_Rk.cols(sampleIdx) * weight;
+    
+
+    W = arma::inv(arma::mat(Phi_Rk_ds * Phi_moe.cols(sampleIdx).t() + lambda_mat)) * Phi_Rk_ds * Z_orig.cols(sampleIdx).t();
+    W_0.col(k) = W.row(0).t();
+    W_cube.slice(k) = W;
+    W.row(0).zeros(); // do not remove the intercept
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void harmony::average_moe_correct_ridge_cpp() {
+  
+  arma::sp_mat _Rk(N, N);
+  arma::sp_mat lambda_mat(B + 1, B + 1);
+
+  if(!lambda_estimation) {
+    // Set lambda if we have to
+    lambda_mat.diag() = lambda;
+  }
+  Z_corr = Z_orig;
+  Progress p(K, verbose);
+  for (unsigned k = 0; k < K; k++) {
+    p.increment();
+    if (Progress::check_abort())
+      return;
+    if (lambda_estimation) {
+      lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
+    }
+    _Rk.diag() = R.row(k);
+    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+    
+    arma::mat inv_cov(arma::inv(arma::mat(Phi_Rk * Phi_moe_t + lambda_mat)));
+
+    // Calculate R-scaled PCs once
+    arma::mat Z_tmp = Z_orig.each_row() % R.row(k);
+    
+    // Generate the betas contribution of the intercept using the data
+    // This erases whatever was written before in W
+    W = inv_cov.unsafe_col(0) * sum(Z_tmp, 1).t();
+
+    // Calculate betas by calculating each batch contribution
+    for(unsigned b=0; b < B; b++) {
+      // inv_conv is B+1xB+1 whereas index is B long
+      W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(index[b]), 1).t();
+    }
+    
+    W_0.col(k) = W.row(0).t();
+    W_cube.slice(k) = W;
+    W.row(0).zeros(); // do not remove the intercept
+    Z_corr -= W.t() * Phi_Rk;
+  }
+  Z_cos = arma::normalise(Z_corr, 2, 0);
+}
+
+
 RCPP_MODULE(harmony_module) {
   class_<harmony>("harmony")
       .constructor()
@@ -486,6 +758,9 @@ RCPP_MODULE(harmony_module) {
       .field("objective_kmeans_cross", &harmony::objective_kmeans_cross)    
       .field("objective_harmony", &harmony::objective_harmony)
       .field("max_iter_kmeans", &harmony::max_iter_kmeans)
+      .field("idxAndWeight", &harmony::idxAndWeight)
+      .field("R_hard", &harmony::R_hard)
+      .field("index", &harmony::index)
       .method("check_convergence", &harmony::check_convergence)
       .method("setup", &harmony::setup)
       .method("compute_objective", &harmony::compute_objective)
@@ -495,6 +770,12 @@ RCPP_MODULE(harmony_module) {
       .method("moe_correct_ridge_cpp", &harmony::moe_correct_ridge_cpp)
       .method("moe_ridge_get_betas_cpp", &harmony::moe_ridge_get_betas_cpp)
       .method("R0_final_correct_cpp", &harmony::R0_final_correct_cpp)
+      .method("downsample_moe_correct_ridge_cpp", &harmony::downsample_moe_correct_ridge_cpp)
+      .method("simple_downsample_moe_correct_ridge_cpp", &harmony::simple_downsample_moe_correct_ridge_cpp)
+      .method("once_downsample_moe_correct_ridge_cpp", &harmony::once_downsample_moe_correct_ridge_cpp)
+      .method("once_simple_downsample_moe_correct_ridge_cpp", &harmony::once_simple_downsample_moe_correct_ridge_cpp)
+      .method("sampleOnce", &harmony::sampleOnce)
+      .method("average_moe_correct_ridge_cpp", &harmony::average_moe_correct_ridge_cpp)
       .field("B_vec", &harmony::B_vec)
       .field("alpha", &harmony::alpha)
       ;

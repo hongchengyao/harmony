@@ -15,3 +15,6 @@ int my_ceil(float num);
 
 
 arma::vec find_lambda_cpp(const float alpha, const arma::vec& cluster_E);
+
+arma::mat make_R_hard(const arma::mat& R);
+arma::mat sampleIdxAndWeight(const arma::mat& R_hard, const arma::sp_mat& Phi, const float sample_num);

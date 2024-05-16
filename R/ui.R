@@ -102,11 +102,15 @@ RunHarmony.default <- function(
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
+  downsample = FALSE,
+  sample_num = 20,
+  avecells = FALSE,
+  avecell_num = 20,
   .options = harmony_options(),
   ...
   ) {
     
-
+    message('[FOR DEV] Branch downsample is being used, three options for downsample')
     ## Try to set number of OPENBLAS cores for harmony.
     ## the function tries to set OpenMP threads
     ## In case OpenMP is not supported it returns FALSE so we don't
@@ -264,7 +268,7 @@ RunHarmony.default <- function(
                        data_mat, phi, sigma, theta, lambda_vec, alpha,
                        max.iter.cluster, epsilon.cluster,
                        epsilon.harmony, nclust, block.size,
-                       B_vec, verbose
+                       B_vec, verbose, sample_num
                    )
 
         
@@ -280,7 +284,7 @@ RunHarmony.default <- function(
         }
         harmonyObj$init_cluster_cpp()
         
-        harmonize(harmonyObj, max.iter.harmony, verbose, beta_centroid, final_R0)
+        harmonize(harmonyObj, max.iter.harmony, verbose, beta_centroid, final_R0, downsample)
         
         if (plot_convergence) graphics::plot(HarmonyConvergencePlot(harmonyObj))
 

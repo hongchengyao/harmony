@@ -18,8 +18,10 @@
   plot_convergence = FALSE,
   return_object = FALSE,
   verbose = TRUE,
-  beta_centroid = FALSE,
-  final_R0 = FALSE,
+  downsample = FALSE,
+  sample_num = 20,
+  avecells = FALSE,
+  avecell_num = 20,
   .options = harmony_options(),
   ...
 )

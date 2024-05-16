@@ -12,16 +12,25 @@
 #' @return return value of rhs function. 
 NULL
 
-harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FALSE, final_R0 = FALSE) {
+harmonize <- function(
+    harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FALSE,
+    final_R0 = FALSE, downsample = FALSE) {
+    
+
+    clusterTimeVec <- c()
+    downsampleTimeVec <- c()
+    regressTimeVec <- c()
+    convTimeVec <- c()
     if (iter_harmony < 1) {
         return(0)
     }
-    
+        
     for (iter in seq_len(iter_harmony)) {
         if (verbose) {
             message(gettextf('Harmony %d/%d', iter, iter_harmony))        
         }
         
+        start.time <- Sys.time()
         # STEP 1: do clustering
         if(beta_centroid){
             err_status <- harmonyObj$beta_centroid_cluster_cpp()
@@ -34,11 +43,46 @@ harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FA
             stop(gettextf('Harmony exited with non-zero exit status: %d', 
                             err_status))
         }
-        
+        clusterTimeVec <- c(clusterTimeVec, Sys.time() - start.time)
+
         # STEP 2: regress out covariates
-        harmonyObj$moe_correct_ridge_cpp()
+        if(downsample == 'nikos') {
+            start.time <- Sys.time()
+            harmonyObj$downsample_moe_correct_ridge_cpp()
+            regressTimeVec <- c(regressTimeVec, Sys.time() - start.time)
+        }else if(downsample == 'simple'){
+            start.time <- Sys.time()
+            harmonyObj$simple_downsample_moe_correct_ridge_cpp()
+            regressTimeVec <- c(regressTimeVec, Sys.time() - start.time)
+            
+        }else if(downsample == 'nikos_once'){
+            if(iter == 1){
+                start.time <- Sys.time()
+                harmonyObj$sampleOnce()
+                downsampleTimeVec <- c(downsampleTimeVec, Sys.time() - start.time)
+            }
+            start.time <- Sys.time()
+            harmonyObj$once_downsample_moe_correct_ridge_cpp()
+            regressTimeVec <- c(regressTimeVec, Sys.time() - start.time)
+            
+        }else if(downsample == 'simple_once'){
+            if(iter == 1){
+                start.time <- Sys.time()
+                harmonyObj$sampleOnce()
+                downsampleTimeVec <- c(downsampleTimeVec, Sys.time() - start.time)
+            }
+            start.time <- Sys.time()
+            harmonyObj$once_simple_downsample_moe_correct_ridge_cpp()
+            regressTimeVec <- c(regressTimeVec, Sys.time() - start.time)
+            
+        }else{
+            start.time <- Sys.time()
+            harmonyObj$moe_correct_ridge_cpp()
+            regressTimeVec <- c(regressTimeVec, Sys.time() - start.time)
+        }   
         
         # STEP 3: check for convergence
+        start.time <- Sys.time()
         if (harmonyObj$check_convergence(1)) {
             if (verbose) {
                 message(gettextf("Harmony converged after %d iterations", 
@@ -46,10 +90,23 @@ harmonize <- function(harmonyObj, iter_harmony, verbose=TRUE, beta_centroid = FA
             }
             return(0)
         }
+        convTimeVec <- c(convTimeVec, Sys.time() - start.time)
+
     }
     if(final_R0){
         harmonyObj$R0_final_correct_cpp()
     }
+    message('cluster time:')
+    print(round(clusterTimeVec, 4))
+    if(!(is.null(downsampleTimeVec))){
+        message('downsample time:')
+        print(round(downsampleTimeVec, 4))
+    
+    }
+    message('regress time:')
+    print(round(regressTimeVec, 4))
+    message('check convergence time:')
+    print(round(convTimeVec, 4))
 }
 
 

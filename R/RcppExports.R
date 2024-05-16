@@ -13,3 +13,11 @@ find_lambda_cpp <- function(alpha, cluster_E) {
     .Call('_harmony_find_lambda_cpp', PACKAGE = 'harmony', alpha, cluster_E)
 }
 
+make_R_hard <- function(R) {
+    .Call('_harmony_make_R_hard', PACKAGE = 'harmony', R)
+}
+
+sampleIdxAndWeight <- function(R_hard, Phi, sample_num) {
+    .Call('_harmony_sampleIdxAndWeight', PACKAGE = 'harmony', R_hard, Phi, sample_num)
+}
+

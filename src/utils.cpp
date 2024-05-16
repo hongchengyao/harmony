@@ -1,5 +1,7 @@
+// [[Rcpp::depends(RcppArmadillo)]]
 #include "utils.h"
 #include "types.h"
+#include <RcppArmadilloExtensions/sample.h>
 
 //[[Rcpp::export]]
 arma::mat kmeans_centers(const arma::mat& X, const int K) {
@@ -105,3 +107,62 @@ arma::vec find_lambda_cpp(const float alpha, const arma::vec& cluster_E) {
   lambda_dym_vec.subvec(1, lambda_dym_vec.n_rows - 1) = cluster_E * alpha;
   return lambda_dym_vec;
 }
+
+
+
+// [[Rcpp::export]]
+arma::mat make_R_hard(const arma::mat& R){
+    int nCols = R.n_cols;
+    int nRows = R.n_rows;
+    arma::uvec index(nCols);
+    // Sample one index per column based on probabilities in each column
+    for(int j = 0; j<nCols;j++){
+        arma::vec probs = R.col(j);
+        index(j) = Rcpp::RcppArmadillo::sample(arma::linspace<arma::uvec>(0, nRows-1, nRows), 1, FALSE, probs)(0);
+    }
+    arma::mat R_hard = arma::zeros<arma::mat>(nRows, nCols);
+    for (int j = 0; j < nCols; j++){
+        R_hard(index(j), j) = 1;
+    }
+    return R_hard;
+}
+
+
+
+// [[Rcpp::export]]
+arma::mat sampleIdxAndWeight(const arma::mat& R_hard, const arma::sp_mat& Phi, const float sample_num){
+    int nRows = R_hard.n_rows;
+    int bRows = Phi.n_rows;
+
+    std::vector<double> all_S;
+    std::vector<double> all_weights;
+    std::vector<double> all_batch;
+    for(int b = 0; b< bRows; b++){
+        // arma::rowvec Phi_b = Phi.row(b);
+        arma::sp_mat Phi_b(Phi.n_cols, Phi.n_cols);
+        Phi_b.diag() = Phi.row(b);
+        // arma::mat R_hard_b = R_hard.each_row() % Phi_b;
+        arma::mat R_hard_b = R_hard * Phi_b;
+        for (int k = 0;k<nRows; k++){
+            arma::uvec nonzeros = arma::find(R_hard_b.row(k) != 0);
+            int nonzero_count = nonzeros.n_rows;
+            double weight_bk = 1.0;
+            if (nonzero_count > sample_num){
+                weight_bk = nonzero_count / sample_num;
+                nonzeros = arma::shuffle(nonzeros);
+                nonzeros = nonzeros.subvec(0, sample_num - 1);
+            }
+            for (unsigned i = 0; i< nonzeros.n_rows; i++){
+                all_S.push_back(nonzeros(i));
+                all_weights.push_back(weight_bk);
+                all_batch.push_back(b);
+            }
+        }
+    }
+    arma::mat result(all_S.size(),3);
+    result.col(0) = arma::vec(all_S);
+    result.col(1) = arma::vec(all_weights);
+    result.col(2) = arma::vec(all_batch);
+    return result;
+}
+

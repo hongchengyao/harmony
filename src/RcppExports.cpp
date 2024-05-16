@@ -52,6 +52,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// make_R_hard
+arma::mat make_R_hard(const arma::mat& R);
+RcppExport SEXP _harmony_make_R_hard(SEXP RSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type R(RSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_R_hard(R));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sampleIdxAndWeight
+arma::mat sampleIdxAndWeight(const arma::mat& R_hard, const arma::sp_mat& Phi, const float sample_num);
+RcppExport SEXP _harmony_sampleIdxAndWeight(SEXP R_hardSEXP, SEXP PhiSEXP, SEXP sample_numSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type R_hard(R_hardSEXP);
+    Rcpp::traits::input_parameter< const arma::sp_mat& >::type Phi(PhiSEXP);
+    Rcpp::traits::input_parameter< const float >::type sample_num(sample_numSEXP);
+    rcpp_result_gen = Rcpp::wrap(sampleIdxAndWeight(R_hard, Phi, sample_num));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 RcppExport SEXP _rcpp_module_boot_harmony_module();
 
@@ -59,6 +83,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_harmony_kmeans_centers", (DL_FUNC) &_harmony_kmeans_centers, 2},
     {"_harmony_scaleRows_dgc", (DL_FUNC) &_harmony_scaleRows_dgc, 6},
     {"_harmony_find_lambda_cpp", (DL_FUNC) &_harmony_find_lambda_cpp, 2},
+    {"_harmony_make_R_hard", (DL_FUNC) &_harmony_make_R_hard, 1},
+    {"_harmony_sampleIdxAndWeight", (DL_FUNC) &_harmony_sampleIdxAndWeight, 3},
     {"_rcpp_module_boot_harmony_module", (DL_FUNC) &_rcpp_module_boot_harmony_module, 0},
     {NULL, NULL, 0}
 };
