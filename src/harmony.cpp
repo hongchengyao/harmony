@@ -4,9 +4,14 @@
 #include "harmony.h"
 #include "types.h"
 #include "utils.h"
+#include "timer.h"
 
-
-
+void print_timers() {  
+  std::cerr << "Print timers" << std::endl;
+  for(auto const& t : timers) {
+    std::cerr << t.first << " I got " << t.second.iter << " iterations " << t.second.elapsed/1000 << " seconds" << std::endl;
+  }
+}
 
 harmony::harmony() :
     window_size(3),
@@ -456,21 +461,33 @@ void harmony::R0_final_correct_cpp(){
 
 
 void harmony::downsample_moe_correct_ridge_cpp() {
-  
   arma::sp_mat _Rk(N, N);
   arma::sp_mat lambda_mat(B + 1, B + 1);
 
   // Generate Rh matrix
-  R_hard = make_R_hard(R);
+  {
+    Timer t(timers["make_R_hard"]);
+    R_hard = make_R_hard(R);
+  }
   // Get the sample cell index and weight per cell
-  idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
-  arma::uvec sampleIdx = conv_to<uvec>::from(idxAndWeight.col(0));
+  {
+    Timer t(timers["sampleIdxAndWeight"]);
+    idxAndWeight = sampleIdxAndWeight(R_hard, Phi, sample_num);
+  }
+  arma::uvec sampleIdx;
+  {
+    Timer t(timers["sampleIdx"]);
+    sampleIdx = conv_to<uvec>::from(idxAndWeight.col(0));
+  }
 
   if(!lambda_estimation) {
     // Set lambda if we have to
     lambda_mat.diag() = lambda;
   }
-  Z_corr = Z_orig;
+  {
+    Timer t(timers["Z_corr"]);
+    Z_corr = Z_orig;
+  }
   Progress p(K, verbose);
   for (unsigned k = 0; k < K; k++) {
     p.increment();
@@ -479,39 +496,87 @@ void harmony::downsample_moe_correct_ridge_cpp() {
     if (lambda_estimation) {
       lambda_mat.diag() = find_lambda_cpp(alpha, E.row(k).t());
     }
-    _Rk.diag() = R.row(k);
-    arma::sp_mat Phi_Rk = Phi_moe * _Rk;
+    {
+      Timer t(timers["_Rk.diag"]);
+      _Rk.diag() = R.row(k);
+    }
+    arma::sp_mat Phi_Rk;
+    {
+      Timer t(timers["Phi_Rk"]);
+      Phi_Rk = Phi_moe * _Rk;
+    }
     
     // arma::sp_mat _Rk_ds(idxAndWeight.n_rows, idxAndWeight.n_rows);
     arma::uvec uvec_k(1);
-    uvec_k(0) = k;
+    {
+      Timer t(timers["uvec_k(0)"]);
+      uvec_k(0) = k;
+    }
     // _Rk_ds.diag() = R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t();
     // arma::sp_mat Phi_Rk_ds = Phi_moe.cols(sampleIdx) * _Rk_ds;
     arma::sp_mat weight(idxAndWeight.n_rows, idxAndWeight.n_rows);
-    weight.diag() = idxAndWeight.col(1);
-    arma::sp_mat Phi_Rk_ds = Phi_Rk.cols(sampleIdx) * weight;
-
-    arma::mat inv_cov(arma::inv(arma::mat(Phi_Rk_ds * Phi_moe.cols(sampleIdx).t() + lambda_mat)));
+    {
+      Timer t(timers["weight.diag"]);
+      weight.diag() = idxAndWeight.col(1);
+    }
+    arma::sp_mat Phi_Rk_ds;
+    {
+      Timer t(timers["Phi_Rk_ds"]);
+      Phi_Rk_ds = Phi_Rk.cols(sampleIdx) * weight;
+    }
+    arma::mat inv_cov;
+    {
+      Timer t(timers["inv_cov"]);
+      inv_cov = arma::inv(arma::mat(Phi_Rk_ds * Phi_moe.cols(sampleIdx).t() + lambda_mat));
+    }
     // Calculate R-scaled PCs once
-    arma::mat Z_tmp = Z_orig.cols(sampleIdx);
-    Z_tmp = Z_tmp.each_row() % (R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t());
+    arma::mat Z_tmp;
+    {
+      Timer t(timers["Z_tmp"]);
+      Z_tmp = Z_orig.cols(sampleIdx);
+    }
+    {
+      Timer t(timers["Z_tmp_scaling"]);
+      Z_tmp = Z_tmp.each_row() % (R.submat(uvec_k, sampleIdx) % idxAndWeight.col(1).t());
+    }
     
     // Generate the betas contribution of the intercept using the data
     // This erases whatever was written before in W
-    W = inv_cov.unsafe_col(0) * sum(Z_tmp, 1).t();
-
+    {
+      Timer t(timers["W_intercept"]);
+      W = inv_cov.unsafe_col(0) * sum(Z_tmp, 1).t();
+    }
     // Calculate betas by calculating each batch contribution
-    for(unsigned b=0; b < B; b++) {
-      // inv_conv is B+1xB+1 whereas index is B long
-      W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(find(idxAndWeight.col(2) == b)), 1).t();
+    {
+      Timer t(timers["W_batches"]);
+      for(unsigned b=0; b < B; b++) {
+        // inv_conv is B+1xB+1 whereas index is B long
+        W += inv_cov.unsafe_col(b+1) * sum(Z_tmp.cols(find(idxAndWeight.col(2) == b)), 1).t();
+      }
     }
     
-    W_0.col(k) = W.row(0).t();
-    W_cube.slice(k) = W;
-    W.row(0).zeros(); // do not remove the intercept
-    Z_corr -= W.t() * Phi_Rk;
+    {
+      Timer t(timers["store_W_0"]);
+      W_0.col(k) = W.row(0).t();
+    }
+    {
+      Timer t(timers["store_W_cube"]);
+      W_cube.slice(k) = W;
+    }
+    {
+      Timer t(timers["W_0_zeros"]);
+      W.row(0).zeros(); // do not remove the intercept
+    }
+    {
+      Timer t(timers["Z_corr_cal"]);
+      Z_corr -= W.t() * Phi_Rk;
+    }
   }
-  Z_cos = arma::normalise(Z_corr, 2, 0);
+  {
+    Timer t(timers["Z_cos"]);
+    Z_cos = arma::normalise(Z_corr, 2, 0);
+  }
+  print_timers();
 }
 
 void harmony::simple_downsample_moe_correct_ridge_cpp() {

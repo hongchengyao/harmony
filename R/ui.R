@@ -110,7 +110,7 @@ RunHarmony.default <- function(
   ...
   ) {
     
-    message('[FOR DEV] Branch downsample is being used, three options for downsample')
+    message('[FOR DEV] Branch downsample_profiling is being used')
     ## Try to set number of OPENBLAS cores for harmony.
     ## the function tries to set OpenMP threads
     ## In case OpenMP is not supported it returns FALSE so we don't
